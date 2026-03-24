@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F8F9FA"
+    android:padding="15dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Chuyến đi của tôi"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#333"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Quản lý các chuyến đi đã đặt"
+        android:textSize="13sp"
+        android:textColor="#777"/>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="15dp"
+        app:tabIndicatorColor="#007BFF"
+        app:tabSelectedTextColor="#007BFF"
+        app:tabTextColor="#777">
+        <com.google.android.material.tabs.TabItem android:text="Sắp đi (2)"/>
+        <com.google.android.material.tabs.TabItem android:text="Đã đi (2)"/>
+        <com.google.android.material.tabs.TabItem android:text="Đã hủy (1)"/>
+    </com.google.android.material.tabs.TabLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvTrips"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="10dp"/>
+
+</LinearLayout>

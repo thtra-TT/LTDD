@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA"
+    android:orientation="vertical">
+
+    <!-- Header -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_home_header"
+        android:padding="20dp">
+
+        <ImageView
+            android:id="@+id/ivBack"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="@android:color/white" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="Combo Du lịch"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_below="@id/ivBack"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/bg_search"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="15dp">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:src="@android:drawable/ic_menu_search"
+                app:tint="#888" />
+
+            <EditText
+                android:id="@+id/etSearchCombo"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:hint="Tìm combo, điểm đến..."
+                android:layout_marginStart="10dp"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </RelativeLayout>
+
+    <!-- Filter Tabs -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="15dp"
+        android:layout_marginTop="15dp">
+        <TextView
+            android:id="@+id/tvLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lựa chọn hàng đầu"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#333"/>
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Xem tất cả >"
+            android:layout_alignParentEnd="true"
+            android:textColor="#007BFF"
+            android:textSize="14sp"
+            android:layout_centerVertical="true"/>
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/tvLabel"
+            android:layout_marginTop="15dp"
+            android:scrollbars="none">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingBottom="10dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tất cả"
+                    android:background="@drawable/bg_social_button"
+                    android:backgroundTint="#007BFF"
+                    android:textColor="@android:color/white"
+                    android:paddingHorizontal="20dp"
+                    android:paddingVertical="8dp"
+                    android:layout_marginEnd="10dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Đà Nẵng"
+                    android:background="@drawable/bg_social_button"
+                    android:backgroundTint="#FFFFFF"
+                    android:textColor="#333"
+                    android:paddingHorizontal="20dp"
+                    android:paddingVertical="8dp"
+                    android:layout_marginEnd="10dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Phú Quốc"
+                    android:background="@drawable/bg_social_button"
+                    android:backgroundTint="#FFFFFF"
+                    android:textColor="#333"
+                    android:paddingHorizontal="20dp"
+                    android:paddingVertical="8dp"
+                    android:layout_marginEnd="10dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Nha Trang"
+                    android:background="@drawable/bg_social_button"
+                    android:backgroundTint="#FFFFFF"
+                    android:textColor="#333"
+                    android:paddingHorizontal="20dp"
+                    android:paddingVertical="8dp"
+                    android:layout_marginEnd="10dp"/>
+            </LinearLayout>
+        </HorizontalScrollView>
+    </RelativeLayout>
+
+    <TextView
+        android:id="@+id/tvNoResultsCombo"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="15dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center"
+        android:text="Không tìm thấy"
+        android:textColor="#777"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvCombos"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="5dp" />
+
+</LinearLayout>

@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F2F6FF">
+
+    <!-- SEARCH BAR -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:background="#FFFFFF"
+        android:gravity="center_vertical"
+        android:paddingStart="8dp"
+        android:paddingEnd="16dp"
+        android:elevation="4dp">
+
+        <!-- Back button -->
+        <ImageView
+            android:id="@+id/ivBackSearch"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@android:drawable/ic_menu_revert"
+            app:tint="#1148B8" />
+
+        <!-- Search input -->
+        <EditText
+            android:id="@+id/etSearch"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Tìm tour, khách sạn, địa điểm..."
+            android:background="@null"
+            android:textSize="15sp"
+            android:textColor="#1A2A4A"
+            android:inputType="text"
+            android:imeOptions="actionSearch"
+            android:maxLines="1"
+            android:layout_marginStart="4dp" />
+
+        <!-- Clear button -->
+        <ImageView
+            android:id="@+id/ivClearSearch"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="6dp"
+            android:src="@android:drawable/ic_menu_close_clear_cancel"
+            app:tint="#AAAAAA"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- DROPDOWN GỢI Ý — hiện khi đang gõ -->
+    <ListView
+        android:id="@+id/lvSuggestions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:divider="#F0F4FF"
+        android:dividerHeight="1dp"
+        android:elevation="6dp"
+        android:visibility="gone" />
+
+    <!-- DIVIDER -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#E8EEF8" />
+
+    <!-- CHIPS địa điểm phổ biến — hiện khi chưa gõ -->
+    <LinearLayout
+        android:id="@+id/layoutChips"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tìm kiếm phổ biến"
+            android:textSize="13sp"
+            android:textColor="#7A8FAF"
+            android:textStyle="bold"
+            android:letterSpacing="0.04"
+            android:layout_marginBottom="12dp" />
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <LinearLayout
+                android:id="@+id/llChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" />
+        </HorizontalScrollView>
+    </LinearLayout>
+
+    <!-- KẾT QUẢ TÌM KIẾM — hiện sau khi gõ xong / chọn gợi ý -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSearchResults"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingTop="8dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never"
+        android:visibility="gone" />
+
+    <!-- EMPTY STATE -->
+    <LinearLayout
+        android:id="@+id/layoutEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔍"
+            android:textSize="40sp"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:id="@+id/tvEmptyMsg"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Không tìm thấy kết quả"
+            android:textSize="15sp"
+            android:textColor="#7A8FAF" />
+    </LinearLayout>
+
+</LinearLayout>

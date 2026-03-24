@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="15dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="15dp"
+    app:cardElevation="3dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="15dp">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <androidx.cardview.widget.CardView
+                android:id="@+id/tripImgContainer"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+                <ImageView
+                    android:id="@+id/ivTripImage"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@android:drawable/ic_menu_gallery"/>
+            </androidx.cardview.widget.CardView>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_toEndOf="@id/tripImgContainer"
+                android:layout_marginStart="12dp">
+
+                <TextView
+                    android:id="@+id/tvTripTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Du thuyền Vịnh Hạ Long..."
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#333"
+                    android:ellipsize="end"
+                    android:maxLines="1"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:gravity="center_vertical">
+                    <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@android:drawable/ic_menu_mylocation" app:tint="#777"/>
+                    <TextView android:id="@+id/tvTripLocation" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Quảng Ninh" android:textSize="12sp" android:layout_marginStart="4dp" android:textColor="#777"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center_vertical">
+                    <ImageView android:layout_width="14dp" android:layout_height="14dp" android:src="@android:drawable/ic_menu_today" app:tint="#777"/>
+                    <TextView android:id="@+id/tvTripDate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="25/01/2026" android:textSize="12sp" android:layout_marginStart="4dp" android:textColor="#777"/>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvTripStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:paddingHorizontal="8dp"
+                    android:paddingVertical="2dp"
+                    android:text="Đã xác nhận"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:background="@drawable/bg_search"
+                    android:textColor="#2E7D32"/>
+
+            </LinearLayout>
+        </RelativeLayout>
+
+        <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginVertical="12dp"/>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <TextView
+                android:id="@+id/tvBookingCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mã đặt chỗ: VHL250126"
+                android:textSize="12sp"
+                android:textColor="#777"/>
+            <TextView
+                android:id="@+id/tvTripPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:text="2.999.000đ"
+                android:textColor="#007BFF"
+                android:textStyle="bold"
+                android:textSize="15sp"/>
+        </RelativeLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnTripAction"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:layout_marginTop="12dp"
+            android:text="Xem chi tiết"
+            android:textAllCaps="false"
+            android:background="@drawable/bg_edittext"
+            android:textColor="#333"
+            android:textSize="14sp"
+            android:textStyle="bold"/>
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

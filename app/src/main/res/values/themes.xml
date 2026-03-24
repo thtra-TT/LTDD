@@ -1,0 +1,12 @@
+<resources>
+    <style name="Theme.VNTravelApp" parent="Theme.Material3.DayNight.NoActionBar">
+
+        <!-- MÀU CHÍNH -->
+        <item name="colorPrimary">@color/primary_color</item>
+        <item name="colorPrimaryContainer">@color/primary_container</item>
+
+        <!-- STATUS BAR -->
+        <item name="android:statusBarColor">@color/primary_color</item>
+
+    </style>
+</resources>
