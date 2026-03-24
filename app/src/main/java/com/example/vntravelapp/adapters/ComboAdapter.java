@@ -12,6 +12,7 @@ import com.bumptech.glide.Glide;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.fragments.DetailFragment;
 import com.example.vntravelapp.models.Combo;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHolder> {
@@ -66,6 +67,8 @@ public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHol
 
                     combo.getImageRes(),
                     combo.getImageUrl(),
+                    new ArrayList<>(),
+                    null,
                     combo.getRating(),
                     0 // reviews (combo không có thì cho 0)
             );

@@ -78,17 +78,25 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- HERO IMAGE -->
+            <!-- HERO MEDIA SLIDER -->
             <FrameLayout
                 android:layout_width="match_parent"
                 android:layout_height="260dp">
 
-                <ImageView
-                    android:id="@+id/ivDetailImage"
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/vpDetailMedia"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@android:drawable/ic_menu_gallery" />
+                    android:layout_height="match_parent" />
+
+                <com.google.android.material.tabs.TabLayout
+                    android:id="@+id/tlMediaIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:layout_marginBottom="10dp"
+                    android:background="@android:color/transparent"
+                    app:tabIndicatorHeight="0dp"
+                    app:tabGravity="center" />
 
                 <ImageView
                     android:id="@+id/ivBack"
@@ -202,7 +210,20 @@
                         android:layout_height="wrap_content"
                         android:textColor="#4A5568"
                         android:textSize="14sp"
+                        android:maxLines="4"
+                        android:ellipsize="end"
                         android:lineSpacingMultiplier="1.7" />
+
+                    <TextView
+                        android:id="@+id/tvReadMore"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Xem thêm"
+                        android:textColor="#1565C0"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="8dp"
+                        android:visibility="gone" />
                 </LinearLayout>
 
                 <!-- LỊCH TRÌNH -->

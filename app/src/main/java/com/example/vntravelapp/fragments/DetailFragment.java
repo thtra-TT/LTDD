@@ -1,6 +1,7 @@
 package com.example.vntravelapp.fragments;
 
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -10,21 +11,31 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.VideoView;
+import android.webkit.WebView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.bumptech.glide.Glide;
 import com.example.vntravelapp.R;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DetailFragment extends Fragment {
 
-    private String title, location, price, description, imageUrl;
+    private String title, location, price, description, imageUrl, videoUrl;
     private int imageRes;
     private float rating;
     private int reviews;
     private String itinerary, included, excluded;
+    private ArrayList<String> imageUrls = new ArrayList<>();
 
     // ─── Sample reviews — dữ liệu tĩnh đủ dùng ──────────────────────────────
     private static final String[][] REVIEW_POOL = {
@@ -42,7 +53,7 @@ public class DetailFragment extends Fragment {
     public static DetailFragment newInstance(String title, String location, String price,
                                              String description, String itinerary,
                                              String included, String excluded,
-                                             int imageRes, String imageUrl,
+                                             int imageRes, String imageUrl, ArrayList<String> imageUrls, String videoUrl,
                                              float rating, int reviews) {
         DetailFragment fragment = new DetailFragment();
         Bundle args = new Bundle();
@@ -55,10 +66,54 @@ public class DetailFragment extends Fragment {
         args.putString("excluded", excluded);
         args.putInt("imageRes", imageRes);
         args.putString("imageUrl", imageUrl);
+        args.putStringArrayList("imageUrls", imageUrls);
+        args.putString("videoUrl", videoUrl);
         args.putFloat("rating", rating);
         args.putInt("reviews", reviews);
         fragment.setArguments(args);
         return fragment;
+    }
+
+    private static boolean isDirectVideoUrl(String url) {
+        if (url == null) {
+            return false;
+        }
+        String trimmed = url.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        String lower = trimmed.toLowerCase();
+        if (lower.contains("youtube.com") || lower.contains("youtu.be")) {
+            return false;
+        }
+        String path;
+        try {
+            path = Uri.parse(trimmed).getPath();
+        } catch (Exception ignored) {
+            path = null;
+        }
+        String target = path != null ? path.toLowerCase() : lower;
+        return target.endsWith(".mp4") || target.endsWith(".m3u8") || target.endsWith(".webm") || target.endsWith(".3gp");
+    }
+
+    private static boolean isYouTubeUrl(String url) {
+        String lower = url.toLowerCase();
+        return lower.contains("youtube.com") || lower.contains("youtu.be");
+    }
+
+    private static String buildYouTubeEmbedUrl(String url) {
+        String videoId = null;
+        if (url.contains("youtu.be/")) {
+            videoId = url.substring(url.lastIndexOf("/") + 1);
+        } else if (url.contains("watch?v=")) {
+            int start = url.indexOf("v=") + 2;
+            int end = url.indexOf("&", start);
+            videoId = end > start ? url.substring(start, end) : url.substring(start);
+        }
+        if (videoId == null || videoId.trim().isEmpty()) {
+            return url;
+        }
+        return "https://www.youtube.com/embed/" + videoId + "?autoplay=1&mute=1&playsinline=1";
     }
 
     @Override
@@ -74,6 +129,9 @@ public class DetailFragment extends Fragment {
             excluded    = getArguments().getString("excluded");
             imageRes    = getArguments().getInt("imageRes");
             imageUrl    = getArguments().getString("imageUrl");
+            ArrayList<String> urls = getArguments().getStringArrayList("imageUrls");
+            imageUrls   = urls == null ? new ArrayList<>() : urls;
+            videoUrl    = getArguments().getString("videoUrl");
             rating      = getArguments().getFloat("rating");
             reviews     = getArguments().getInt("reviews");
         }
@@ -85,8 +143,9 @@ public class DetailFragment extends Fragment {
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_detail, container, false);
 
-        ImageView  ivImage    = view.findViewById(R.id.ivDetailImage);
-        ImageView  ivBack     = view.findViewById(R.id.ivBack);
+        ViewPager2 vpDetailMedia = view.findViewById(R.id.vpDetailMedia);
+        TabLayout tlMediaIndicator = view.findViewById(R.id.tlMediaIndicator);
+        ImageView ivBack     = view.findViewById(R.id.ivBack);
         TextView   tvTitle    = view.findViewById(R.id.tvDetailTitle);
         TextView   tvLocation = view.findViewById(R.id.tvDetailLocation);
         TextView   tvPrice    = view.findViewById(R.id.tvDetailPrice);
@@ -94,6 +153,7 @@ public class DetailFragment extends Fragment {
         TextView   tvRating   = view.findViewById(R.id.tvDetailRating);
         TextView   tvReviews  = view.findViewById(R.id.tvDetailReviews);
         TextView   tvScore    = view.findViewById(R.id.tvReviewScore);
+        TextView   tvReadMore = view.findViewById(R.id.tvReadMore);
 
         LinearLayout llItinerary = view.findViewById(R.id.tvItinerary);
         LinearLayout llIncluded  = view.findViewById(R.id.tvIncluded);
@@ -109,13 +169,32 @@ public class DetailFragment extends Fragment {
         tvReviews.setText(" · " + reviews + " đánh giá");
         tvScore.setText(String.valueOf(rating));
 
-        // ── Ảnh ──────────────────────────────────────────────────────────────
-        if (imageUrl != null && !imageUrl.isEmpty()) {
-            Glide.with(this).load(imageUrl)
-                    .placeholder(android.R.drawable.ic_menu_gallery).into(ivImage);
-        } else if (imageRes != 0) {
-            ivImage.setImageResource(imageRes);
+        List<MediaItem> mediaItems = buildMediaItems();
+        MediaSlideAdapter mediaSlideAdapter = new MediaSlideAdapter(mediaItems);
+        vpDetailMedia.setAdapter(mediaSlideAdapter);
+        if (mediaItems.size() > 1) {
+            new TabLayoutMediator(tlMediaIndicator, vpDetailMedia, (tab, position) -> {}).attach();
+        } else {
+            tlMediaIndicator.setVisibility(View.GONE);
         }
+
+        // Logic "Xem thêm" cho mô tả
+        tvDesc.post(() -> {
+            if (tvDesc.getLineCount() > 4) {
+                tvReadMore.setVisibility(View.VISIBLE);
+                tvReadMore.setOnClickListener(v -> {
+                    if (tvReadMore.getText().toString().equals("Xem thêm")) {
+                        tvDesc.setMaxLines(Integer.MAX_VALUE);
+                        tvReadMore.setText("Rút gọn");
+                    } else {
+                        tvDesc.setMaxLines(4);
+                        tvReadMore.setText("Xem thêm");
+                    }
+                });
+            } else {
+                tvReadMore.setVisibility(View.GONE);
+            }
+        });
 
         // ── Back ─────────────────────────────────────────────────────────────
         ivBack.setOnClickListener(v -> {
@@ -143,16 +222,11 @@ public class DetailFragment extends Fragment {
     }
 
     // ─── Review renderer ──────────────────────────────────────────────────────
-    /**
-     * Hiển thị 4 review ngẫu nhiên từ pool, dựa trên hashCode của title để
-     * luôn ra cùng set review cho cùng 1 tour (không random mỗi lần mở).
-     */
     private void renderReviews(LinearLayout container, float avgRating) {
         int dp = (int) TypedValue.applyDimension(
                 TypedValue.COMPLEX_UNIT_DIP, 1,
                 requireContext().getResources().getDisplayMetrics());
 
-        // Chọn 4 review dựa theo title hash — ổn định, không đổi mỗi lần
         int startIdx = Math.abs(title.hashCode()) % REVIEW_POOL.length;
         int count = Math.min(4, REVIEW_POOL.length);
 
@@ -162,18 +236,15 @@ public class DetailFragment extends Fragment {
             int    stars    = Integer.parseInt(r[1]);
             String comment  = r[2];
 
-            // ── Row container ─────────────────────────────────────────────────
             LinearLayout row = new LinearLayout(requireContext());
             row.setOrientation(LinearLayout.VERTICAL);
             row.setBackgroundColor(i % 2 == 0 ? 0xFFF8FAFF : 0xFFFFFFFF);
             LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT);
-            rowParams.setMargins(0, 0, 0, i < count - 1 ? 0 : 0);
             row.setLayoutParams(rowParams);
             row.setPadding(0, 14 * dp, 0, 14 * dp);
 
-            // ── Avatar + Name + Stars ─────────────────────────────────────────
             LinearLayout header = new LinearLayout(requireContext());
             header.setOrientation(LinearLayout.HORIZONTAL);
             header.setGravity(Gravity.CENTER_VERTICAL);
@@ -181,7 +252,6 @@ public class DetailFragment extends Fragment {
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT));
 
-            // Avatar circle với chữ cái đầu
             TextView avatar = new TextView(requireContext());
             avatar.setText(String.valueOf(reviewer.charAt(0)));
             avatar.setTextSize(14);
@@ -193,7 +263,6 @@ public class DetailFragment extends Fragment {
             avatarParams.setMargins(0, 0, 12 * dp, 0);
             avatar.setLayoutParams(avatarParams);
 
-            // Name + stars column
             LinearLayout nameCol = new LinearLayout(requireContext());
             nameCol.setOrientation(LinearLayout.VERTICAL);
             nameCol.setLayoutParams(new LinearLayout.LayoutParams(
@@ -216,7 +285,6 @@ public class DetailFragment extends Fragment {
             header.addView(nameCol);
             row.addView(header);
 
-            // ── Comment ───────────────────────────────────────────────────────
             TextView tvComment = new TextView(requireContext());
             tvComment.setText(comment);
             tvComment.setTextSize(13);
@@ -229,7 +297,6 @@ public class DetailFragment extends Fragment {
             tvComment.setLayoutParams(cmtParams);
             row.addView(tvComment);
 
-            // ── Divider (trừ item cuối) ───────────────────────────────────────
             if (i < count - 1) {
                 View divider = new View(requireContext());
                 divider.setBackgroundColor(0xFFEEF2FA);
@@ -244,7 +311,6 @@ public class DetailFragment extends Fragment {
         }
     }
 
-    // ─── Helpers ──────────────────────────────────────────────────────────────
     private String buildStars(int count) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 5; i++) sb.append(i < count ? "★" : "☆");
@@ -256,7 +322,6 @@ public class DetailFragment extends Fragment {
         return colors[index % colors.length];
     }
 
-    // ─── Timeline renderer ────────────────────────────────────────────────────
     private void renderTimeline(LinearLayout container, String data) {
         if (data == null || data.trim().isEmpty()) return;
         String[] lines = data.split("\n");
@@ -343,7 +408,6 @@ public class DetailFragment extends Fragment {
         }
     }
 
-    // ─── Checklist renderer ───────────────────────────────────────────────────
     private void renderChecklist(LinearLayout container, String data, int color, String icon) {
         if (data == null || data.trim().isEmpty()) return;
         String[] lines = data.split("\n");
@@ -388,12 +452,180 @@ public class DetailFragment extends Fragment {
         }
     }
 
-    // ─── Circle drawable ──────────────────────────────────────────────────────
     private android.graphics.drawable.GradientDrawable makeCircle(int color) {
         android.graphics.drawable.GradientDrawable d =
                 new android.graphics.drawable.GradientDrawable();
         d.setShape(android.graphics.drawable.GradientDrawable.OVAL);
         d.setColor(color);
         return d;
+    }
+
+    private List<MediaItem> buildMediaItems() {
+        List<MediaItem> items = new ArrayList<>();
+        if (imageUrls != null) {
+            for (String url : imageUrls) {
+                if (url != null && !url.trim().isEmpty()) {
+                    items.add(MediaItem.image(url.trim()));
+                }
+            }
+        }
+        if (items.isEmpty()) {
+            if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+                items.add(MediaItem.image(imageUrl.trim()));
+            } else if (imageRes != 0) {
+                items.add(MediaItem.imageRes(imageRes));
+            }
+        }
+        if (videoUrl != null && !videoUrl.trim().isEmpty()) {
+            String trimmed = videoUrl.trim();
+            if (isDirectVideoUrl(trimmed)) {
+                items.add(MediaItem.video(trimmed));
+            } else if (isYouTubeUrl(trimmed)) {
+                items.add(MediaItem.youtube(trimmed));
+            }
+        }
+        if (items.isEmpty()) {
+            items.add(MediaItem.imageRes(android.R.drawable.ic_menu_gallery));
+        }
+        return items;
+    }
+
+    private static class MediaItem {
+        final MediaType type;
+        final String url;
+        final int imageRes;
+
+        private MediaItem(MediaType type, String url, int imageRes) {
+            this.type = type;
+            this.url = url;
+            this.imageRes = imageRes;
+        }
+
+        static MediaItem image(String url) {
+            return new MediaItem(MediaType.IMAGE, url, 0);
+        }
+
+        static MediaItem imageRes(int imageRes) {
+            return new MediaItem(MediaType.IMAGE, null, imageRes);
+        }
+
+        static MediaItem video(String url) {
+            return new MediaItem(MediaType.VIDEO, url, 0);
+        }
+
+        static MediaItem youtube(String url) {
+            return new MediaItem(MediaType.YOUTUBE, url, 0);
+        }
+    }
+
+    private enum MediaType {
+        IMAGE,
+        VIDEO,
+        YOUTUBE
+    }
+
+    private class MediaSlideAdapter extends RecyclerView.Adapter<MediaSlideAdapter.MediaViewHolder> {
+        private final List<MediaItem> items;
+
+        MediaSlideAdapter(List<MediaItem> items) {
+            this.items = items == null ? new ArrayList<>() : items;
+        }
+
+        @NonNull
+        @Override
+        public MediaViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_media_slide, parent, false);
+            return new MediaViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull MediaViewHolder holder, int position) {
+            holder.bind(items.get(position));
+        }
+
+        @Override
+        public void onViewRecycled(@NonNull MediaViewHolder holder) {
+            super.onViewRecycled(holder);
+            holder.release();
+        }
+
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
+
+        class MediaViewHolder extends RecyclerView.ViewHolder {
+            final ImageView ivMediaImage;
+            final VideoView vvMediaVideo;
+            final WebView wvMediaVideo;
+            final ImageView ivMediaPlay;
+
+            MediaViewHolder(@NonNull View itemView) {
+                super(itemView);
+                ivMediaImage = itemView.findViewById(R.id.ivMediaImage);
+                vvMediaVideo = itemView.findViewById(R.id.vvMediaVideo);
+                wvMediaVideo = itemView.findViewById(R.id.wvMediaVideo);
+                ivMediaPlay = itemView.findViewById(R.id.ivMediaPlay);
+            }
+
+            void bind(MediaItem item) {
+                ivMediaImage.setVisibility(View.GONE);
+                vvMediaVideo.setVisibility(View.GONE);
+                wvMediaVideo.setVisibility(View.GONE);
+                ivMediaPlay.setVisibility(View.GONE);
+
+                if (item.type == MediaType.IMAGE) {
+                    ivMediaImage.setVisibility(View.VISIBLE);
+                    if (item.url != null && !item.url.isEmpty()) {
+                        Glide.with(itemView.getContext())
+                                .load(item.url)
+                                .placeholder(android.R.drawable.ic_menu_gallery)
+                                .centerCrop()
+                                .into(ivMediaImage);
+                    } else if (item.imageRes != 0) {
+                        ivMediaImage.setImageResource(item.imageRes);
+                    } else {
+                        ivMediaImage.setImageResource(android.R.drawable.ic_menu_gallery);
+                    }
+                    return;
+                }
+
+                if (item.type == MediaType.VIDEO) {
+                    ivMediaImage.setVisibility(View.VISIBLE);
+                    ivMediaImage.setImageResource(android.R.drawable.ic_menu_gallery);
+                    ivMediaPlay.setVisibility(View.VISIBLE);
+                    vvMediaVideo.setVisibility(View.GONE);
+                    vvMediaVideo.setVideoURI(Uri.parse(item.url));
+                    vvMediaVideo.setOnPreparedListener(mp -> {
+                        mp.setLooping(true);
+                        mp.setVolume(0, 0);
+                        vvMediaVideo.setVisibility(View.VISIBLE);
+                        ivMediaImage.setVisibility(View.GONE);
+                        ivMediaPlay.setVisibility(View.GONE);
+                        vvMediaVideo.start();
+                    });
+                    vvMediaVideo.setOnErrorListener((mp, what, extra) -> {
+                        vvMediaVideo.setVisibility(View.GONE);
+                        ivMediaImage.setVisibility(View.VISIBLE);
+                        ivMediaPlay.setVisibility(View.VISIBLE);
+                        return true;
+                    });
+                    return;
+                }
+
+                if (item.type == MediaType.YOUTUBE) {
+                    wvMediaVideo.setVisibility(View.VISIBLE);
+                    wvMediaVideo.getSettings().setJavaScriptEnabled(true);
+                    wvMediaVideo.getSettings().setDomStorageEnabled(true);
+                    wvMediaVideo.getSettings().setMediaPlaybackRequiresUserGesture(false);
+                    wvMediaVideo.loadUrl(buildYouTubeEmbedUrl(item.url));
+                }
+            }
+
+            void release() {
+                vvMediaVideo.stopPlayback();
+                wvMediaVideo.loadUrl("about:blank");
+            }
+        }
     }
 }

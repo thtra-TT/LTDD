@@ -12,6 +12,7 @@ import com.bumptech.glide.Glide;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.fragments.DetailFragment;
 import com.example.vntravelapp.models.Hotel;
+import java.util.ArrayList;
 import java.util.List;
 
 public class HotelAdapter extends RecyclerView.Adapter<HotelAdapter.HotelViewHolder> {
@@ -62,6 +63,8 @@ public class HotelAdapter extends RecyclerView.Adapter<HotelAdapter.HotelViewHol
 
                     hotel.getImageRes(),
                     hotel.getImageUrl(),
+                    new ArrayList<>(),
+                    null,
                     hotel.getRating(),
                     hotel.getReviewCount()
             );

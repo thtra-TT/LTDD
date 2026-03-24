@@ -61,7 +61,11 @@ public class HomeFragment extends Fragment {
 
         // Setup Tours RecyclerView from SQLite
         rvResults = view.findViewById(R.id.rvTours);
-        rvResults.setLayoutManager(new LinearLayoutManager(getContext()));
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        layoutManager.setAutoMeasureEnabled(true);
+        rvResults.setLayoutManager(layoutManager);
+        rvResults.setHasFixedSize(false);
+        rvResults.setNestedScrollingEnabled(false);
 
         allTours = dbHelper.getAllTours();
         allHotels = dbHelper.getAllHotels();

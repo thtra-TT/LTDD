@@ -168,7 +168,7 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     static class TourViewHolder extends RecyclerView.ViewHolder {
         ImageView ivTourImage;
-        TextView tvTitle, tvLocation, tvDuration, tvPrice, tvRating, tvReviews;
+        TextView tvTitle, tvLocation, tvDuration, tvPrice, tvRating, tvReviews, tvBadge;
 
         TourViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -179,6 +179,7 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
             tvPrice = itemView.findViewById(R.id.tvPrice);
             tvRating = itemView.findViewById(R.id.tvRating);
             tvReviews = itemView.findViewById(R.id.tvReviews);
+            tvBadge = itemView.findViewById(R.id.tvBadge);
         }
 
         void bind(TourRow row) {
@@ -190,9 +191,18 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
             tvRating.setText("⭐ " + tour.getRating());
             tvReviews.setText("(" + tour.getReviewCount() + " đánh giá)");
 
-            if (tour.getImageUrl() != null && !tour.getImageUrl().isEmpty()) {
+            if (tour.getBadge() != null && !tour.getBadge().trim().isEmpty()) {
+                tvBadge.setVisibility(View.VISIBLE);
+                tvBadge.setText(tour.getBadge());
+            } else {
+                tvBadge.setVisibility(View.GONE);
+            }
+
+            String primaryImageUrl = tour.getPrimaryImageUrl();
+
+            if (primaryImageUrl != null && !primaryImageUrl.isEmpty()) {
                 Glide.with(itemView.getContext())
-                    .load(tour.getImageUrl())
+                    .load(primaryImageUrl)
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .into(ivTourImage);
             } else if (tour.getImageResId() != 0) {
@@ -206,13 +216,13 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                         tour.getLocation(),
                         tour.getPrice(),
                         tour.getDescription(),
-
                         "", // itinerary ❗
                         "", // included ❗
                         "", // excluded ❗
-
                         tour.getImageResId(),
-                        tour.getImageUrl(),
+                        primaryImageUrl,
+                        new ArrayList<>(tour.getImageUrls()),
+                        tour.getVideoUrl(),
                         tour.getRating(),
                         tour.getReviewCount()
                 );
@@ -264,13 +274,13 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                         hotel.getLocation(),
                         hotel.getPrice(),
                         hotel.getDescription(),
-
                         "", // itinerary ❗
                         "", // included ❗
                         "", // excluded ❗
-
                         hotel.getImageRes(),
                         hotel.getImageUrl(),
+                        new ArrayList<>(),
+                        null,
                         hotel.getRating(),
                         hotel.getReviewCount()
                 );
@@ -295,4 +305,3 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
     }
 }
-
