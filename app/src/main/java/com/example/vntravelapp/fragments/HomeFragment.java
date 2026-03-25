@@ -7,8 +7,6 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.text.Editable;
-import android.text.TextWatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
@@ -31,15 +29,19 @@ public class HomeFragment extends Fragment {
 
     private DatabaseHelper dbHelper;
     private TourAdapter tourAdapter;
+    private TourAdapter popularAdapter;
     private HomeSearchAdapter searchAdapter;
     private List<Tour> allTours = new ArrayList<>();
+    private List<Tour> popularTours = new ArrayList<>();
     private List<Hotel> allHotels = new ArrayList<>();
     private List<SearchIndexItem> searchIndex = new ArrayList<>();
     private List<LocationIndexItem> locationIndex = new ArrayList<>();
+    
     private TextView tvNoResults;
     private TextView tvFeaturedTitle;
-    private TextView tvViewAll;
     private RecyclerView rvResults;
+    private RecyclerView rvPopular;
+    private View rlPopularHeader;
     private boolean isSearching = false;
 
     @Nullable
@@ -48,35 +50,53 @@ public class HomeFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         dbHelper = new DatabaseHelper(getContext());
 
+        // UI References
+        tvNoResults = view.findViewById(R.id.tvNoResults);
+        tvFeaturedTitle = view.findViewById(R.id.tvFeaturedTitle);
+        rvResults = view.findViewById(R.id.rvTours);
+        rvPopular = view.findViewById(R.id.rvPopularTours);
+        rlPopularHeader = view.findViewById(R.id.rlPopularHeader);
+
         // Setup Categories
         setupCategory(view.findViewById(R.id.catTour), "Tour", android.R.drawable.ic_menu_directions);
         setupCategory(view.findViewById(R.id.catHotel), "Khách sạn", android.R.drawable.ic_menu_myplaces);
         setupCategory(view.findViewById(R.id.catTicket), "Vé", android.R.drawable.ic_menu_agenda);
         setupCategory(view.findViewById(R.id.catCombo), "Combo", android.R.drawable.ic_menu_save);
 
-        // Add Click Listeners
+        // Click Listeners
         view.findViewById(R.id.catHotel).setOnClickListener(v -> switchFragment(new HotelFragment()));
         view.findViewById(R.id.catTicket).setOnClickListener(v -> switchFragment(new TicketFragment()));
         view.findViewById(R.id.catCombo).setOnClickListener(v -> switchFragment(new ComboFragment()));
 
-        // Setup Tours RecyclerView from SQLite
-        rvResults = view.findViewById(R.id.rvTours);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
-        layoutManager.setAutoMeasureEnabled(true);
-        rvResults.setLayoutManager(layoutManager);
-        rvResults.setHasFixedSize(false);
-        rvResults.setNestedScrollingEnabled(false);
-
-        allTours = dbHelper.getAllTours();
+        // Data Loading
+        allTours = dbHelper.getAllTours(); // Now sorted by bookCount and rating
+        popularTours = dbHelper.getPopularTours();
         allHotels = dbHelper.getAllHotels();
         buildSearchIndex(allTours, allHotels);
 
+        // Setup Main RecyclerView (All Tours)
+        rvResults.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvResults.setHasFixedSize(false);
+        rvResults.setNestedScrollingEnabled(false);
         tourAdapter = new TourAdapter(new ArrayList<>(allTours));
-        searchAdapter = new HomeSearchAdapter();
         rvResults.setAdapter(tourAdapter);
 
-        tvNoResults = view.findViewById(R.id.tvNoResults);
-        tvFeaturedTitle = view.findViewById(R.id.tvFeaturedTitle);
+        // Setup Popular RecyclerView (Horizontal)
+        LinearLayoutManager popularLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
+        rvPopular.setLayoutManager(popularLayoutManager);
+        popularAdapter = new TourAdapter(new ArrayList<>(popularTours)) {
+            @Override
+            public void onBindViewHolder(@NonNull TourViewHolder holder, int position) {
+                super.onBindViewHolder(holder, position);
+                // Adjust width for horizontal items
+                ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
+                lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.8);
+                holder.itemView.setLayoutParams(lp);
+            }
+        };
+        rvPopular.setAdapter(popularAdapter);
+
+        searchAdapter = new HomeSearchAdapter();
 
         EditText etSearch = view.findViewById(R.id.etSearchHome);
         etSearch.setOnClickListener(v -> switchFragment(new SearchFragment()));
@@ -98,106 +118,6 @@ public class HomeFragment extends Fragment {
         ImageView iv = view.findViewById(R.id.ivCategoryIcon);
         tv.setText(name);
         iv.setImageResource(iconRes);
-    }
-
-    private void filterSearch(String query) {
-        String normalized = SearchUtils.normalize(query);
-        if (normalized.isEmpty()) {
-            if (isSearching) {
-                rvResults.setAdapter(tourAdapter);
-                isSearching = false;
-            }
-            tvFeaturedTitle.setVisibility(View.VISIBLE);
-            tvViewAll.setVisibility(View.VISIBLE);
-            tvNoResults.setVisibility(View.GONE);
-            return;
-        }
-
-        SearchResults results = runSearch(normalized);
-        if (!isSearching) {
-            rvResults.setAdapter(searchAdapter);
-            isSearching = true;
-        }
-
-        searchAdapter.submitSections(results.sections);
-        tvFeaturedTitle.setVisibility(View.GONE);
-        tvViewAll.setVisibility(View.GONE);
-        tvNoResults.setVisibility(results.isEmpty() ? View.VISIBLE : View.GONE);
-    }
-
-    private SearchResults runSearch(String normalizedQuery) {
-        List<ScoredTour> scoredTours = new ArrayList<>();
-        List<ScoredHotel> scoredHotels = new ArrayList<>();
-
-        for (SearchIndexItem item : searchIndex) {
-            double score = scoreItem(normalizedQuery, item);
-            if (score < 65.0) {
-                continue;
-            }
-            if (item.type == SearchIndexType.TOUR) {
-                scoredTours.add(new ScoredTour(item.tour, score));
-            } else if (item.type == SearchIndexType.HOTEL) {
-                scoredHotels.add(new ScoredHotel(item.hotel, score));
-            }
-        }
-
-        List<ScoredLocation> scoredLocations = new ArrayList<>();
-        for (LocationIndexItem location : locationIndex) {
-            double score = SearchUtils.matchScore(normalizedQuery, location.normalized);
-            if (score >= 75.0) {
-                scoredLocations.add(new ScoredLocation(location.display, score));
-            }
-        }
-
-        Collections.sort(scoredTours, (a, b) -> Double.compare(b.score, a.score));
-        Collections.sort(scoredHotels, (a, b) -> Double.compare(b.score, a.score));
-        Collections.sort(scoredLocations, (a, b) -> Double.compare(b.score, a.score));
-
-        List<HomeSearchAdapter.SearchSection> sections = new ArrayList<>();
-
-        if (!scoredLocations.isEmpty()) {
-            List<HomeSearchAdapter.SearchRow> rows = new ArrayList<>();
-            for (ScoredLocation entry : scoredLocations) {
-                rows.add(new HomeSearchAdapter.LocationRow(entry.location, entry.score));
-            }
-            sections.add(new HomeSearchAdapter.SearchSection("Địa điểm", rows));
-        }
-
-        if (!scoredTours.isEmpty()) {
-            List<HomeSearchAdapter.SearchRow> rows = new ArrayList<>();
-            for (ScoredTour entry : scoredTours) {
-                rows.add(new HomeSearchAdapter.TourRow(entry.tour, entry.score));
-            }
-            sections.add(new HomeSearchAdapter.SearchSection("Tour", rows));
-        }
-
-        if (!scoredHotels.isEmpty()) {
-            List<HomeSearchAdapter.SearchRow> rows = new ArrayList<>();
-            for (ScoredHotel entry : scoredHotels) {
-                rows.add(new HomeSearchAdapter.HotelRow(entry.hotel, entry.score));
-            }
-            sections.add(new HomeSearchAdapter.SearchSection("Khách sạn", rows));
-        }
-
-        return new SearchResults(sections);
-    }
-
-    private double scoreItem(String normalizedQuery, SearchIndexItem item) {
-        double locationScore = SearchUtils.matchScore(normalizedQuery, item.locationNormalized);
-        double titleScore = SearchUtils.matchScore(normalizedQuery, item.titleNormalized);
-
-        double best = Math.max(titleScore, locationScore * 1.15);
-        if (locationScore >= 90.0) {
-            best += 10.0;
-        } else if (locationScore >= 80.0) {
-            best += 5.0;
-        }
-
-        if (titleScore >= 90.0) {
-            best += 5.0;
-        }
-
-        return best;
     }
 
     private void buildSearchIndex(List<Tour> tours, List<Hotel> hotels) {
@@ -248,18 +168,6 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    private static class SearchResults {
-        final List<HomeSearchAdapter.SearchSection> sections;
-
-        SearchResults(List<HomeSearchAdapter.SearchSection> sections) {
-            this.sections = sections;
-        }
-
-        boolean isEmpty() {
-            return sections == null || sections.isEmpty();
-        }
-    }
-
     private enum SearchIndexType {
         TOUR,
         HOTEL
@@ -288,36 +196,6 @@ public class HomeFragment extends Fragment {
         LocationIndexItem(String display, String normalized) {
             this.display = display;
             this.normalized = normalized;
-        }
-    }
-
-    private static class ScoredTour {
-        final Tour tour;
-        final double score;
-
-        ScoredTour(Tour tour, double score) {
-            this.tour = tour;
-            this.score = score;
-        }
-    }
-
-    private static class ScoredHotel {
-        final Hotel hotel;
-        final double score;
-
-        ScoredHotel(Hotel hotel, double score) {
-            this.hotel = hotel;
-            this.score = score;
-        }
-    }
-
-    private static class ScoredLocation {
-        final String location;
-        final double score;
-
-        ScoredLocation(String location, double score) {
-            this.location = location;
-            this.score = score;
         }
     }
 }

@@ -11,15 +11,18 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.database.DatabaseHelper;
+import com.example.vntravelapp.models.Tour;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class BookingFragment extends Fragment {
 
-    // Số khách lưu bằng biến int, không cần EditText nữa
     private int countAdult = 0;
     private int countChild = 0;
 
-    // Views
-    private TextView edtAdult, edtChild;   // giờ là TextView hiển thị số
+    private TextView edtAdult, edtChild;
     private EditText edtName, edtPhone, edtEmail;
     private TextView tvTotal, tvTotalInline, tvPriceDetail;
     private Button btnConfirm;
@@ -27,10 +30,10 @@ public class BookingFragment extends Fragment {
     private String title, priceStr, location, imageUrl;
     private int imageRes;
     private double priceAdult;
+    private String startDate, endDate;
 
-    // ─── newInstance ──────────────────────────────────────────────────────────
     public static BookingFragment newInstance(String title, String price, String location,
-                                              String imageUrl, int imageRes) {
+                                              String imageUrl, int imageRes, String startDate, String endDate) {
         BookingFragment f = new BookingFragment();
         Bundle args = new Bundle();
         args.putString("title", title);
@@ -38,24 +41,33 @@ public class BookingFragment extends Fragment {
         args.putString("location", location);
         args.putString("imageUrl", imageUrl);
         args.putInt("imageRes", imageRes);
+        args.putString("startDate", startDate);
+        args.putString("endDate", endDate);
         f.setArguments(args);
         return f;
     }
 
-    // Overload tương thích code cũ
-    public static BookingFragment newInstance(String title, String price, String location) {
-        return newInstance(title, price, location, null, 0);
+    public static BookingFragment newInstance(String title, String price, String location, String imageUrl, int imageRes) {
+        return newInstance(title, price, location, imageUrl, imageRes, null, null);
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        title    = getArguments().getString("title");
-        priceStr = getArguments().getString("price");
-        location = getArguments().getString("location");
-        imageUrl = getArguments().getString("imageUrl");
-        imageRes = getArguments().getInt("imageRes", 0);
-        priceAdult = parsePrice(priceStr);
+        if (getArguments() != null) {
+            title = getArguments().getString("title");
+            priceStr = getArguments().getString("price");
+            location = getArguments().getString("location");
+            imageUrl = getArguments().getString("imageUrl");
+            imageRes = getArguments().getInt("imageRes", 0);
+            startDate = getArguments().getString("startDate");
+            endDate = getArguments().getString("endDate");
+            priceAdult = parsePrice(priceStr);
+        }
+    }
+
+    private boolean isTourActive() {
+        return Tour.isActiveOn(startDate, endDate, null);
     }
 
     @Override
@@ -64,7 +76,6 @@ public class BookingFragment extends Fragment {
 
         View view = inflater.inflate(R.layout.fragment_booking, container, false);
 
-        // ── Ánh xạ views ─────────────────────────────────────────────────────
         edtAdult      = view.findViewById(R.id.edtAdult);
         edtChild      = view.findViewById(R.id.edtChild);
         edtName       = view.findViewById(R.id.edtName);
@@ -86,7 +97,6 @@ public class BookingFragment extends Fragment {
         TextView  tvBLocation = view.findViewById(R.id.tvBookingLocation);
         TextView  tvBPrice    = view.findViewById(R.id.tvBookingPrice);
 
-        // ── Header info ───────────────────────────────────────────────────────
         tvBTitle.setText(title);
         tvBTitleCard.setText(title);
         tvBLocation.setText("📍 " + location);
@@ -100,7 +110,6 @@ public class BookingFragment extends Fragment {
             ivImage.setImageResource(imageRes);
         }
 
-        // ── Stepper người lớn ─────────────────────────────────────────────────
         btnAdultMinus.setOnClickListener(v -> {
             if (countAdult > 0) {
                 countAdult--;
@@ -114,7 +123,6 @@ public class BookingFragment extends Fragment {
             calculatePrice();
         });
 
-        // ── Stepper trẻ em ────────────────────────────────────────────────────
         btnChildMinus.setOnClickListener(v -> {
             if (countChild > 0) {
                 countChild--;
@@ -128,16 +136,19 @@ public class BookingFragment extends Fragment {
             calculatePrice();
         });
 
-        // ── Hiển thị giá ban đầu ─────────────────────────────────────────────
         calculatePrice();
 
-        // ── Confirm ───────────────────────────────────────────────────────────
         btnConfirm.setOnClickListener(v -> handleBooking());
+
+        if (!isTourActive()) {
+            btnConfirm.setEnabled(false);
+            btnConfirm.setText("Tour hết hiệu lực");
+            btnConfirm.setBackgroundColor(0xFF9E9E9E);
+        }
 
         return view;
     }
 
-    // ─── Tính giá ─────────────────────────────────────────────────────────────
     private void calculatePrice() {
         double childPrice = priceAdult * 0.7;
         double total = (countAdult * priceAdult) + (countChild * childPrice);
@@ -162,8 +173,12 @@ public class BookingFragment extends Fragment {
         } catch (Exception e) { return 0; }
     }
 
-    // ─── Xử lý đặt tour ──────────────────────────────────────────────────────
     private void handleBooking() {
+        if (!isTourActive()) {
+            Toast.makeText(getContext(), "Tour này hiện không khả dụng!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String name  = edtName.getText().toString().trim();
         String phone = edtPhone.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
@@ -174,8 +189,10 @@ public class BookingFragment extends Fragment {
         }
 
         DatabaseHelper db = new DatabaseHelper(getContext());
-        boolean success = db.insertOrder(title, "2026-03-20",
-                countAdult + countChild, phone, email);
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        
+        boolean success = db.insertOrder(title, today,
+                countAdult + countChild, name, phone);
 
         if (success) {
             Toast.makeText(getContext(), "Đặt thành công!", Toast.LENGTH_SHORT).show();

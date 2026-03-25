@@ -56,17 +56,17 @@ public class HotelAdapter extends RecyclerView.Adapter<HotelAdapter.HotelViewHol
                     hotel.getLocation(),
                     hotel.getPrice(),
                     hotel.getDescription(),
-
-                    "", // itinerary ❗
-                    "", // included ❗
-                    "", // excluded ❗
-
+                    "", 
+                    "", 
+                    "", 
                     hotel.getImageRes(),
                     hotel.getImageUrl(),
                     new ArrayList<>(),
                     null,
                     hotel.getRating(),
-                    hotel.getReviewCount()
+                    hotel.getReviewCount(),
+                    null,
+                    null
             );
             activity.getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, fragment)

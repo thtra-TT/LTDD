@@ -408,7 +408,9 @@ public class MapFragment extends Fragment {
                 new ArrayList<>(tour.getImageUrls()),
                 tour.getVideoUrl(),
                 tour.getRating(),
-                tour.getReviewCount()
+                tour.getReviewCount(),
+                tour.getStartDate(),
+                tour.getEndDate()
         );
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
@@ -436,7 +438,9 @@ public class MapFragment extends Fragment {
                 imageUrls,
                 null,
                 hotel.getRating(),
-                hotel.getReviewCount()
+                hotel.getReviewCount(),
+                null,
+                null
         );
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
