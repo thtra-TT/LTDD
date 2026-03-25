@@ -9,6 +9,8 @@ public class Hotel {
     private String imageUrl;
     private float rating;
     private int reviewCount;
+    private double latitude;
+    private double longitude;
 
     public Hotel(String name, String location, String description, String price, int imageRes, float rating, int reviewCount) {
         this.name = name;
@@ -19,6 +21,8 @@ public class Hotel {
         this.rating = rating;
         this.reviewCount = reviewCount;
         this.imageUrl = "";
+        this.latitude = 0.0;
+        this.longitude = 0.0;
     }
 
     public Hotel(String name, String location, String description, String price, int imageRes, String imageUrl, float rating, int reviewCount) {
@@ -30,6 +34,22 @@ public class Hotel {
         this.imageUrl = imageUrl;
         this.rating = rating;
         this.reviewCount = reviewCount;
+        this.latitude = 0.0;
+        this.longitude = 0.0;
+    }
+
+    public Hotel(String name, String location, String description, String price, int imageRes, String imageUrl,
+                 float rating, int reviewCount, double latitude, double longitude) {
+        this.name = name;
+        this.location = location;
+        this.description = description;
+        this.price = price;
+        this.imageRes = imageRes;
+        this.imageUrl = imageUrl;
+        this.rating = rating;
+        this.reviewCount = reviewCount;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
     public String getName() { return name; }
@@ -40,4 +60,6 @@ public class Hotel {
     public String getImageUrl() { return imageUrl; }
     public float getRating() { return rating; }
     public int getReviewCount() { return reviewCount; }
+    public double getLatitude() { return latitude; }
+    public double getLongitude() { return longitude; }
 }

@@ -1,5 +1,7 @@
 package com.example.vntravelapp.adapters;
 
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -168,7 +170,8 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
     static class TourViewHolder extends RecyclerView.ViewHolder {
         ImageView ivTourImage;
-        TextView tvTitle, tvLocation, tvDuration, tvPrice, tvRating, tvReviews;
+        TextView tvTitle, tvLocation, tvDuration, tvPrice, tvRating, tvReviews, tvBadge, tvTourStatus;
+        View vInactiveOverlay;
 
         TourViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -179,6 +182,9 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
             tvPrice = itemView.findViewById(R.id.tvPrice);
             tvRating = itemView.findViewById(R.id.tvRating);
             tvReviews = itemView.findViewById(R.id.tvReviews);
+            tvBadge = itemView.findViewById(R.id.tvBadge);
+            tvTourStatus = itemView.findViewById(R.id.tvTourStatus);
+            vInactiveOverlay = itemView.findViewById(R.id.vInactiveOverlay);
         }
 
         void bind(TourRow row) {
@@ -190,9 +196,36 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
             tvRating.setText("⭐ " + tour.getRating());
             tvReviews.setText("(" + tour.getReviewCount() + " đánh giá)");
 
-            if (tour.getImageUrl() != null && !tour.getImageUrl().isEmpty()) {
+            boolean isActive = tour.isActive();
+            if (!isActive) {
+                if (vInactiveOverlay != null) vInactiveOverlay.setVisibility(View.VISIBLE);
+                if (tvTourStatus != null) {
+                    tvTourStatus.setVisibility(View.VISIBLE);
+                    tvTourStatus.setText(tour.getStatusMessage());
+                }
+                itemView.setAlpha(0.7f);
+                ColorMatrix matrix = new ColorMatrix();
+                matrix.setSaturation(0);
+                ivTourImage.setColorFilter(new ColorMatrixColorFilter(matrix));
+            } else {
+                if (vInactiveOverlay != null) vInactiveOverlay.setVisibility(View.GONE);
+                if (tvTourStatus != null) tvTourStatus.setVisibility(View.GONE);
+                itemView.setAlpha(1.0f);
+                ivTourImage.setColorFilter(null);
+            }
+
+            if (tour.getBadge() != null && !tour.getBadge().trim().isEmpty()) {
+                tvBadge.setVisibility(View.VISIBLE);
+                tvBadge.setText(tour.getBadge());
+            } else {
+                tvBadge.setVisibility(View.GONE);
+            }
+
+            String primaryImageUrl = tour.getPrimaryImageUrl();
+
+            if (primaryImageUrl != null && !primaryImageUrl.isEmpty()) {
                 Glide.with(itemView.getContext())
-                    .load(tour.getImageUrl())
+                    .load(primaryImageUrl)
                     .placeholder(android.R.drawable.ic_menu_gallery)
                     .into(ivTourImage);
             } else if (tour.getImageResId() != 0) {
@@ -206,15 +239,17 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                         tour.getLocation(),
                         tour.getPrice(),
                         tour.getDescription(),
-
-                        "", // itinerary ❗
-                        "", // included ❗
-                        "", // excluded ❗
-
+                        tour.getItinerary(),
+                        tour.getIncluded(),
+                        tour.getExcluded(),
                         tour.getImageResId(),
-                        tour.getImageUrl(),
+                        primaryImageUrl,
+                        new ArrayList<>(tour.getImageUrls()),
+                        tour.getVideoUrl(),
                         tour.getRating(),
-                        tour.getReviewCount()
+                        tour.getReviewCount(),
+                        tour.getStartDate(),
+                        tour.getEndDate()
                 );
                 activity.getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, fragment)
@@ -264,15 +299,17 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                         hotel.getLocation(),
                         hotel.getPrice(),
                         hotel.getDescription(),
-
-                        "", // itinerary ❗
-                        "", // included ❗
-                        "", // excluded ❗
-
+                        "", // itinerary
+                        "", // included
+                        "", // excluded
                         hotel.getImageRes(),
                         hotel.getImageUrl(),
+                        new ArrayList<>(),
+                        null,
                         hotel.getRating(),
-                        hotel.getReviewCount()
+                        hotel.getReviewCount(),
+                        null,
+                        null
                 );
                 activity.getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, fragment)
@@ -295,4 +332,3 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         }
     }
 }
-

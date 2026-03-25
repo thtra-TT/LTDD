@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cvTourContainer"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
@@ -8,20 +9,68 @@
     app:cardElevation="4dp">
 
     <LinearLayout
+        android:id="@+id/llTourContent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="180dp">
+            android:layout_height="200dp">
 
+            <!-- Video Player cho Preview -->
+            <VideoView
+                android:id="@+id/vvTourPreview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <!-- Thumbnail Image -->
             <ImageView
                 android:id="@+id/ivTourImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop"
                 android:src="@android:drawable/ic_menu_gallery" />
+
+            <!-- Overlay Gradient -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:layout_alignParentBottom="true"
+                android:background="@android:drawable/screen_background_dark_transparent"
+                android:visibility="visible" />
+
+            <TextView
+                android:id="@+id/tvBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                android:background="@drawable/bg_search"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:text="HOT"
+                android:textAllCaps="true"
+                android:textColor="#FF5722"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+            <!-- Status Label -->
+            <TextView
+                android:id="@+id/tvTourStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/tvBadge"
+                android:layout_margin="10dp"
+                android:background="@drawable/bg_search"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="6dp"
+                android:text="Hết thời gian"
+                android:textColor="#F44336"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/tvRating"
@@ -35,6 +84,25 @@
                 android:text="⭐ 4.8"
                 android:textSize="12sp"
                 android:textStyle="bold" />
+
+            <!-- Icon Play nhỏ báo hiệu có video -->
+            <ImageView
+                android:id="@+id/ivPlayIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_centerInParent="true"
+                android:src="@android:drawable/ic_media_play"
+                android:alpha="0.6"
+                android:visibility="gone"
+                app:tint="#FFFFFF" />
+
+            <!-- Gray Overlay for inactive tours -->
+            <View
+                android:id="@+id/vInactiveOverlay"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#80000000"
+                android:visibility="gone" />
         </RelativeLayout>
 
         <LinearLayout
@@ -94,6 +162,15 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:text="2 ngày 1 đêm"
+                    android:textColor="#777"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/tvBookCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:text="• 1.2k đã đặt"
                     android:textColor="#777"
                     android:textSize="12sp" />
             </LinearLayout>

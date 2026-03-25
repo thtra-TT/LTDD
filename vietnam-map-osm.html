@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vietnam Tourism Map - Leaflet + OpenStreetMap</title>
+
+  <!-- Leaflet (free/open-source map library) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --error: #ef4444;
+      --border: #1f2937;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      width: 100%;
+      height: 100%;
+    }
+
+    .topbar {
+      border-bottom: 1px solid var(--border);
+      background: rgba(17, 24, 39, 0.95);
+      padding: 10px 14px;
+    }
+
+    .topbar h1 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .topbar p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .status {
+      border-bottom: 1px solid var(--border);
+      background: rgba(17, 24, 39, 0.9);
+      padding: 10px 14px;
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .status .ok {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .status .error {
+      color: var(--error);
+      font-weight: 600;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      min-height: 300px;
+    }
+
+    /* Popup styling for location details */
+    .popup-card {
+      width: min(250px, 72vw);
+      color: #0f172a;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .popup-title {
+      margin: 0 0 6px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .popup-type {
+      display: inline-block;
+      font-size: 11px;
+      border: 1px solid #d1d5db;
+      border-radius: 999px;
+      padding: 2px 8px;
+      margin-bottom: 6px;
+      color: #374151;
+      background: #f9fafb;
+    }
+
+    .popup-desc {
+      margin: 0 0 6px;
+      color: #374151;
+    }
+
+    .popup-img {
+      width: 100%;
+      height: 130px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin: 6px 0;
+      display: block;
+      background: #f3f4f6;
+    }
+
+    .popup-link {
+      font-size: 12px;
+      color: #2563eb;
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    @media (max-width: 640px) {
+      .topbar h1 {
+        font-size: 16px;
+      }
+
+      .topbar p,
+      .status {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <h1>Vietnam Tourism Map</h1>
+      <p>Leaflet.js + OpenStreetMap + Overpass API (free resources only)</p>
+    </header>
+
+    <div id="status" class="status">Initializing map...</div>
+
+    <!-- Responsive map container -->
+    <main id="map" aria-label="Vietnam map"></main>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script>
+    // 1) Map center and zoom as requested (middle of Vietnam).
+    const VIETNAM_CENTER = [16.0, 108.0];
+    const VIETNAM_ZOOM = 6;
+
+    // Bounding box roughly covering Vietnam: south, west, north, east.
+    const VIETNAM_BBOX = [8.18, 102.14, 23.39, 109.47];
+
+    // We keep up to this many markers to keep map responsive.
+    const MAX_MARKERS = 200;
+
+    const statusEl = document.getElementById("status");
+
+    // 2) Create Leaflet map with default interactions (zoom/drag enabled).
+    const map = L.map("map", {
+      zoomControl: true,
+      dragging: true,
+      scrollWheelZoom: true
+    }).setView(VIETNAM_CENTER, VIETNAM_ZOOM);
+
+    // 3) Use OpenStreetMap tile layer (free).
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Marker colors by tourism type.
+    const markerColors = {
+      attraction: "#2563eb",
+      museum: "#9333ea",
+      hotel: "#16a34a"
+    };
+
+    // 4) Build Overpass query for tourism=attraction|museum|hotel in Vietnam bbox.
+    function buildOverpassQuery() {
+      const bbox = VIETNAM_BBOX.join(",");
+      return `
+[out:json][timeout:45];
+(
+  node["tourism"~"^(attraction|museum|hotel)$"](${bbox});
+  way["tourism"~"^(attraction|museum|hotel)$"](${bbox});
+  relation["tourism"~"^(attraction|museum|hotel)$"](${bbox});
+);
+out tags center 1200;
+      `.trim();
+    }
+
+    // 5) Read a usable image URL from OSM tags when available.
+    function getImageUrl(tags = {}) {
+      if (tags.image && /^https?:\/\//i.test(tags.image)) {
+        return tags.image;
+      }
+
+      // If tag has wikimedia_commons=File:Example.jpg, convert to direct image URL.
+      const commons = tags.wikimedia_commons;
+      if (commons && /^File:/i.test(commons)) {
+        const fileName = commons.replace(/^File:/i, "").replace(/ /g, "_");
+        return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(fileName)}`;
+      }
+
+      return null;
+    }
+
+    // 6) Convert raw Overpass element to a location object with lat/lon.
+    function normalizeElement(el) {
+      const tags = el.tags || {};
+      const lat = typeof el.lat === "number" ? el.lat : el.center?.lat;
+      const lon = typeof el.lon === "number" ? el.lon : el.center?.lon;
+
+      if (typeof lat !== "number" || typeof lon !== "number") {
+        return null;
+      }
+
+      return {
+        id: `${el.type}-${el.id}`,
+        name: tags.name || "Unnamed location",
+        tourismType: tags.tourism || "tourism",
+        description: tags.description || tags.note || (tags.wikidata ? `Wikidata: ${tags.wikidata}` : "No description available."),
+        wikidata: tags.wikidata || "",
+        imageUrl: getImageUrl(tags),
+        lat,
+        lon
+      };
+    }
+
+    // 7) Escape HTML to keep popup safe.
+    function escapeHtml(text) {
+      return String(text)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // 8) Build popup HTML with name, description, and optional image.
+    function buildPopupHtml(loc) {
+      const imageHtml = loc.imageUrl
+        ? `<img class="popup-img" src="${escapeHtml(loc.imageUrl)}" alt="${escapeHtml(loc.name)}" loading="lazy" />`
+        : "";
+
+      const wikidataHtml = loc.wikidata
+        ? `<a class="popup-link" target="_blank" rel="noopener noreferrer" href="https://www.wikidata.org/wiki/${encodeURIComponent(loc.wikidata)}">${escapeHtml(loc.wikidata)}</a>`
+        : "";
+
+      return `
+        <div class="popup-card">
+          <div class="popup-type">${escapeHtml(loc.tourismType)}</div>
+          <h3 class="popup-title">${escapeHtml(loc.name)}</h3>
+          <p class="popup-desc">${escapeHtml(loc.description)}</p>
+          ${imageHtml}
+          ${wikidataHtml}
+        </div>
+      `;
+    }
+
+    // 9) Create a simple colored circle marker icon.
+    function createMarkerIcon(color) {
+      return L.divIcon({
+        className: "",
+        html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,0.3)"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+        popupAnchor: [0, -8]
+      });
+    }
+
+    function setStatus(message, kind = "") {
+      statusEl.innerHTML = kind ? `<span class="${kind}">${message}</span>` : message;
+    }
+
+    // 10) Fetch locations from Overpass and render markers.
+    async function loadTourismLocations() {
+      setStatus("Loading tourist locations from Overpass API...");
+
+      const query = buildOverpassQuery();
+      const endpoint = "https://overpass-api.de/api/interpreter";
+
+      // Timeout guard for slow API responses.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      try {
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+          body: new URLSearchParams({ data: query }).toString(),
+          signal: controller.signal
+        });
+
+        if (!response.ok) {
+          throw new Error(`Overpass request failed: HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const elements = Array.isArray(data.elements) ? data.elements : [];
+
+        // Normalize and deduplicate by id.
+        const byId = new Map();
+        for (const el of elements) {
+          const loc = normalizeElement(el);
+          if (!loc) continue;
+          if (!byId.has(loc.id)) byId.set(loc.id, loc);
+        }
+
+        const locations = Array.from(byId.values()).slice(0, MAX_MARKERS);
+
+        if (!locations.length) {
+          setStatus("No tourist locations found in this region.", "error");
+          return;
+        }
+
+        // Add each location as a marker with styled popup.
+        for (const loc of locations) {
+          const color = markerColors[loc.tourismType] || "#0ea5e9";
+          L.marker([loc.lat, loc.lon], { icon: createMarkerIcon(color) })
+            .addTo(map)
+            .bindPopup(buildPopupHtml(loc), { maxWidth: 280 });
+        }
+
+        setStatus(`Loaded ${locations.length} locations successfully.`, "ok");
+      } catch (error) {
+        // 11) Graceful error handling on API failure.
+        const message = error?.name === "AbortError"
+          ? "Overpass API timeout. Please try again in a moment."
+          : `Could not load Overpass data: ${error?.message || "Unknown error"}`;
+
+        setStatus(message, "error");
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    // Start loading data immediately after map creation.
+    loadTourismLocations();
+
+    // Keep map layout stable after any window size changes.
+    window.addEventListener("resize", () => {
+      map.invalidateSize();
+    });
+  </script>
+</body>
+</html>
+

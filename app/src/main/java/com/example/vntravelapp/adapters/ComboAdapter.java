@@ -12,6 +12,7 @@ import com.bumptech.glide.Glide;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.fragments.DetailFragment;
 import com.example.vntravelapp.models.Combo;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHolder> {
@@ -49,7 +50,6 @@ public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHol
             holder.ivCombo.setImageResource(combo.getImageRes());
         }
         
-        // Strikethrough for original price
         holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | android.graphics.Paint.STRIKE_THRU_TEXT_FLAG);
 
         holder.itemView.setOnClickListener(v -> {
@@ -59,15 +59,17 @@ public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHol
                     combo.getLocation(),
                     combo.getDiscountedPrice(),
                     combo.getDescription(),
-
-                    "", // itinerary ❗
-                    "", // included ❗
-                    "", // excluded ❗
-
+                    "", 
+                    "", 
+                    "", 
                     combo.getImageRes(),
                     combo.getImageUrl(),
+                    new ArrayList<>(),
+                    null,
                     combo.getRating(),
-                    0 // reviews (combo không có thì cho 0)
+                    0,
+                    null,
+                    null
             );
             activity.getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, fragment)

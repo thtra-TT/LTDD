@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     android:background="#F8F9FA">
 
     <LinearLayout
@@ -71,11 +72,37 @@
 
         </LinearLayout>
 
+        <!-- Popular Section -->
+        <RelativeLayout
+            android:id="@+id/rlPopularHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="15dp"
+            android:layout_marginTop="25dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔥 Tour Phổ Biến Nhất"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#333"/>
+        </RelativeLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvPopularTours"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            android:paddingHorizontal="5dp"
+            android:clipToPadding="false"/>
+
+        <!-- All Tours Section -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="15dp"
-            android:layout_marginTop="15dp">
+            android:layout_marginTop="20dp">
             <TextView
                 android:id="@+id/tvFeaturedTitle"
                 android:layout_width="wrap_content"
@@ -105,4 +132,4 @@
             android:padding="5dp"
             android:nestedScrollingEnabled="false"/>
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>
