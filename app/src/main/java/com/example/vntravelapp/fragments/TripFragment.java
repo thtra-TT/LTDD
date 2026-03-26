@@ -28,6 +28,8 @@ import java.util.List;
 
 public class TripFragment extends Fragment {
 
+    public static final String ARG_INITIAL_TAB = "initial_tab";
+
     private TripsPagerAdapter pagerAdapter;
     private DatabaseHelper db;
     private ProfileTourAdapter recommendationAdapter;
@@ -52,6 +54,11 @@ public class TripFragment extends Fragment {
             if (position == 2) tab.setText("Đã hủy");
             if (position == 3) tab.setText("Yêu thích");
         }).attach();
+
+        int initialTab = getArguments() != null ? getArguments().getInt(ARG_INITIAL_TAB, 0) : 0;
+        if (initialTab >= 0 && initialTab < pagerAdapter.getItemCount()) {
+            viewPager.setCurrentItem(initialTab, false);
+        }
 
         edtSearch.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}

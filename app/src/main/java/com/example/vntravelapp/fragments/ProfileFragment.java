@@ -22,15 +22,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
 import com.example.vntravelapp.HomeActivity;
 import com.example.vntravelapp.LoginActivity;
 import com.example.vntravelapp.R;
+import com.example.vntravelapp.adapters.ProfileTourAdapter;
 import com.example.vntravelapp.database.DatabaseHelper;
+import com.example.vntravelapp.models.Tour;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ProfileFragment extends Fragment {
 
@@ -42,9 +48,18 @@ public class ProfileFragment extends Fragment {
 
     private TextView tvStatTrips;
     private TextView tvStatVisited;
+    private TextView tvStatFavorites;
+
+    private RecyclerView rvRecommendations;
+    private ProfileTourAdapter recommendationAdapter;
+
+    private TextView tvBadgeExplorer;
+    private TextView tvBadgeNature;
 
     private View skeletonContainer;
     private View cardProfileHeader;
+    private View profileHeaderCover;
+
 
     private DatabaseHelper db;
 
@@ -66,16 +81,24 @@ public class ProfileFragment extends Fragment {
         tvUserBio = view.findViewById(R.id.tvUserBio);
         skeletonContainer = view.findViewById(R.id.skeletonContainer);
         cardProfileHeader = view.findViewById(R.id.cardProfileHeader);
+        profileHeaderCover = view.findViewById(R.id.profileHeaderCover);
+        tvBadgeExplorer = view.findViewById(R.id.tvBadgeExplorer);
+        tvBadgeNature = view.findViewById(R.id.tvBadgeNature);
+
 
         View statTrips = view.findViewById(R.id.statTrips);
         View statVisited = view.findViewById(R.id.statVisited);
+        View statFavorites = view.findViewById(R.id.statFavorites);
         tvStatTrips = statTrips.findViewById(R.id.tvStatValue);
         tvStatVisited = statVisited.findViewById(R.id.tvStatValue);
+        tvStatFavorites = statFavorites.findViewById(R.id.tvStatValue);
         ((TextView) statTrips.findViewById(R.id.tvStatLabel)).setText("Chuyến đi");
         ((TextView) statVisited.findViewById(R.id.tvStatLabel)).setText("Đã đi");
+        ((TextView) statFavorites.findViewById(R.id.tvStatLabel)).setText("Yêu thích");
 
-        statTrips.setOnClickListener(v -> navigateToTrips());
-        statVisited.setOnClickListener(v -> navigateToTrips());
+        statTrips.setOnClickListener(v -> navigateToTripsTab(0));
+        statVisited.setOnClickListener(v -> navigateToTripsTab(1));
+        statFavorites.setOnClickListener(v -> navigateToTripsTab(3));
 
         initAvatarLaunchers();
         ivAvatar.setOnClickListener(v -> showAvatarPicker());
@@ -83,11 +106,24 @@ public class ProfileFragment extends Fragment {
 
         setupOption(view.findViewById(R.id.optEditInfo), "Chỉnh sửa thông tin", "Tên, email, bio", android.R.drawable.ic_menu_edit, v -> showEditProfileDialog());
         setupOption(view.findViewById(R.id.optPassword), "Đổi mật khẩu", "Bảo mật tài khoản", android.R.drawable.ic_lock_lock, v -> showChangePasswordDialog());
-        setupOption(view.findViewById(R.id.optFavorites), "Yêu thích", "Tour đã lưu", android.R.drawable.ic_menu_myplaces, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
+        setupOption(view.findViewById(R.id.optFavorites), "Yêu thích", "Tour & khách sạn", android.R.drawable.ic_menu_myplaces, v -> navigateToTripsTab(3));
         setupOption(view.findViewById(R.id.optMyReviews), "Review của tôi", "Tour & khách sạn", android.R.drawable.star_big_on, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
+        setupOption(view.findViewById(R.id.optJournal), "Nhật ký du lịch", "Hành trình của bạn", android.R.drawable.ic_menu_edit, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
         setupOption(view.findViewById(R.id.optNotifications), "Thông báo", "Ưu đãi & nhắc lịch", android.R.drawable.ic_dialog_email, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
         setupOption(view.findViewById(R.id.optSettings), "Cài đặt", "Ngôn ngữ, giao diện", android.R.drawable.ic_menu_preferences, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
         setupOption(view.findViewById(R.id.optLogout), "Đăng xuất", "Thoát tài khoản", android.R.drawable.ic_lock_power_off, v -> handleLogout());
+
+        rvRecommendations = view.findViewById(R.id.rvProfileRecommendations);
+        rvRecommendations.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        recommendationAdapter = new ProfileTourAdapter(new ArrayList<>(), this::openTourDetail);
+        rvRecommendations.setAdapter(recommendationAdapter);
+
+        View scrollView = view.findViewById(R.id.profileScroll);
+        if (scrollView instanceof androidx.core.widget.NestedScrollView) {
+            ((androidx.core.widget.NestedScrollView) scrollView)
+                    .setOnScrollChangeListener((androidx.core.widget.NestedScrollView.OnScrollChangeListener)
+                            (v, scrollX, scrollY, oldScrollX, oldScrollY) -> updateHeaderAnimation(scrollY));
+        }
 
         swipeRefreshLayout.setOnRefreshListener(this::loadProfileData);
         loadProfileData();
@@ -95,9 +131,9 @@ public class ProfileFragment extends Fragment {
         return view;
     }
 
-    private void navigateToTrips() {
+    private void navigateToTripsTab(int tabIndex) {
         if (getActivity() instanceof HomeActivity) {
-            ((HomeActivity) getActivity()).selectTab(R.id.nav_trip);
+            ((HomeActivity) getActivity()).openTripsTab(tabIndex);
         }
     }
 
@@ -153,6 +189,7 @@ public class ProfileFragment extends Fragment {
         showSkeleton(true);
         loadUserInfo();
         loadStats();
+        loadRecommendations();
         showSkeleton(false);
         swipeRefreshLayout.setRefreshing(false);
     }
@@ -197,8 +234,58 @@ public class ProfileFragment extends Fragment {
     private void loadStats() {
         int tripCount = db.getTripCount();
         int visitedCount = db.getVisitedLocationCount();
+        int favoriteCount = db.getFavoriteCount();
         tvStatTrips.setText(String.valueOf(tripCount));
         tvStatVisited.setText(String.valueOf(visitedCount));
+        tvStatFavorites.setText(String.valueOf(favoriteCount));
+
+        if (tvBadgeExplorer != null) {
+            String level = tripCount >= 10 ? "Explorer Pro" : (tripCount >= 5 ? "Explorer" : "Beginner");
+            tvBadgeExplorer.setText(level);
+        }
+        if (tvBadgeNature != null) {
+            tvBadgeNature.setText(visitedCount >= 3 ? "Biển / Núi" : "Chuyến mới");
+        }
+    }
+
+
+    private void loadRecommendations() {
+        List<Tour> tours = db.getRecommendedTours(8);
+        recommendationAdapter.updateItems(tours);
+    }
+
+    private void updateHeaderAnimation(int scrollY) {
+        if (cardProfileHeader == null || profileHeaderCover == null) return;
+        float progress = Math.min(1f, scrollY / 240f);
+        cardProfileHeader.setAlpha(1f - (0.3f * progress));
+        cardProfileHeader.setScaleX(1f - (0.04f * progress));
+        cardProfileHeader.setScaleY(1f - (0.04f * progress));
+        profileHeaderCover.setAlpha(1f - (0.2f * progress));
+    }
+
+    private void openTourDetail(Tour tour) {
+        DetailFragment fragment = DetailFragment.newInstance(
+                tour.getTitle(),
+                tour.getLocation(),
+                tour.getPrice(),
+                tour.getDescription(),
+                tour.getItinerary(),
+                tour.getIncluded(),
+                tour.getExcluded(),
+                tour.getImageResId(),
+                tour.getPrimaryImageUrl(),
+                new ArrayList<>(tour.getImageUrls()),
+                tour.getVideoUrl(),
+                tour.getRating(),
+                tour.getReviewCount(),
+                tour.getStartDate(),
+                tour.getEndDate()
+        );
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
     private void showEditProfileDialog() {

@@ -13,21 +13,27 @@ import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.VideoView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.vntravelapp.R;
+import com.example.vntravelapp.database.DatabaseHelper;
 import com.example.vntravelapp.fragments.DetailFragment;
 import com.example.vntravelapp.models.Tour;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder> {
 
     private List<Tour> tourList;
     private Handler videoHandler = new Handler(Looper.getMainLooper());
+    private DatabaseHelper dbHelper;
+    private Set<String> favoriteTitles = new HashSet<>();
 
     public TourAdapter(List<Tour> tourList) {
         this.tourList = tourList;
@@ -42,6 +48,10 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull TourViewHolder holder, int position) {
+        if (dbHelper == null) {
+            dbHelper = new DatabaseHelper(holder.itemView.getContext());
+            favoriteTitles = new HashSet<>(dbHelper.getFavoriteTitles("Tour"));
+        }
         Tour tour = tourList.get(position);
         holder.tvTitle.setText(tour.getTitle());
         holder.tvLocation.setText(tour.getLocation());
@@ -169,6 +179,29 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
                         .commit();
             });
         });
+
+        boolean isFavorite = favoriteTitles.contains(tour.getTitle());
+        updateFavoriteIcon(holder.ivFavorite, isFavorite);
+        holder.ivFavorite.setOnClickListener(v -> {
+            boolean wasFavorite = favoriteTitles.contains(tour.getTitle());
+            if (wasFavorite) {
+                dbHelper.removeFavorite(tour.getTitle(), "Tour");
+                favoriteTitles.remove(tour.getTitle());
+                Toast.makeText(holder.itemView.getContext(), "Đã xóa khỏi yêu thích", Toast.LENGTH_SHORT).show();
+            } else {
+                dbHelper.addFavorite(tour.getTitle(), "Tour");
+                favoriteTitles.add(tour.getTitle());
+                Toast.makeText(holder.itemView.getContext(), "Đã thêm vào yêu thích", Toast.LENGTH_SHORT).show();
+            }
+            updateFavoriteIcon(holder.ivFavorite, !wasFavorite);
+            v.animate().scaleX(1.2f).scaleY(1.2f).setDuration(120)
+                    .withEndAction(() -> v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(120));
+        });
+    }
+
+    private void updateFavoriteIcon(ImageView view, boolean isFavorite) {
+        int resId = isFavorite ? R.drawable.ic_heart_filled : R.drawable.ic_heart_outline;
+        view.setImageResource(resId);
     }
 
     private static boolean isDirectVideoUrl(String url) {
@@ -196,7 +229,7 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
     public int getItemCount() { return tourList.size(); }
 
     public static class TourViewHolder extends RecyclerView.ViewHolder {
-        ImageView ivTourImage, ivPlayIcon;
+        ImageView ivTourImage, ivPlayIcon, ivFavorite;
         VideoView vvTourPreview;
         TextView tvTitle, tvLocation, tvDuration, tvPrice, tvRating, tvReviews, tvBadge, tvTourStatus, tvBookCount;
         View vInactiveOverlay;
@@ -206,6 +239,7 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
             ivTourImage = itemView.findViewById(R.id.ivTourImage);
             vvTourPreview = itemView.findViewById(R.id.vvTourPreview);
             ivPlayIcon = itemView.findViewById(R.id.ivPlayIcon);
+            ivFavorite = itemView.findViewById(R.id.ivFavoriteTour);
             tvTitle = itemView.findViewById(R.id.tvTourTitle);
             tvLocation = itemView.findViewById(R.id.tvLocation);
             tvDuration = itemView.findViewById(R.id.tvDuration);

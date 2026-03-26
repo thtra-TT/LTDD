@@ -7,6 +7,7 @@
     android:background="#F8F9FA">
 
     <androidx.core.widget.NestedScrollView
+        android:id="@+id/profileScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
@@ -16,21 +17,33 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <RelativeLayout
+            <FrameLayout
+                android:id="@+id/profileHeaderCover"
                 android:layout_width="match_parent"
-                android:layout_height="180dp"
-                android:background="@drawable/bg_home_header"
-                android:padding="20dp">
+                android:layout_height="200dp">
+
+                <ImageView
+                    android:id="@+id/ivProfileCover"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/bg_home_header" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="#55000000" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|start"
+                    android:layout_margin="20dp"
                     android:text="Hồ sơ"
                     android:textColor="@android:color/white"
                     android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="10dp" />
-            </RelativeLayout>
+                    android:textStyle="bold" />
+            </FrameLayout>
 
             <LinearLayout
                 android:id="@+id/skeletonContainer"
@@ -61,7 +74,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginHorizontal="20dp"
-                android:layout_marginTop="-80dp"
+                android:layout_marginTop="-70dp"
                 app:cardCornerRadius="20dp"
                 app:cardElevation="4dp">
 
@@ -69,7 +82,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="15dp">
+                    android:padding="16dp">
 
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -77,9 +90,9 @@
 
                         <androidx.cardview.widget.CardView
                             android:id="@+id/avatarContainer"
-                            android:layout_width="72dp"
-                            android:layout_height="72dp"
-                            app:cardCornerRadius="36dp"
+                            android:layout_width="78dp"
+                            android:layout_height="78dp"
+                            app:cardCornerRadius="39dp"
                             app:cardElevation="0dp"
                             app:cardBackgroundColor="#F0F0F0">
                             <ImageView
@@ -95,7 +108,7 @@
                             android:layout_height="wrap_content"
                             android:orientation="vertical"
                             android:layout_toEndOf="@id/avatarContainer"
-                            android:layout_marginStart="15dp"
+                            android:layout_marginStart="14dp"
                             android:layout_centerVertical="true">
                             <TextView
                                 android:id="@+id/tvUserName"
@@ -104,21 +117,21 @@
                                 android:text="Người dùng"
                                 android:textSize="18sp"
                                 android:textStyle="bold"
-                                android:textColor="#333" />
+                                android:textColor="#1A1A1A" />
                             <TextView
                                 android:id="@+id/tvUserEmail"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="email@example.com"
                                 android:textSize="13sp"
-                                android:textColor="#777" />
+                                android:textColor="#6E7A8A" />
                             <TextView
                                 android:id="@+id/tvUserBio"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="Đam mê khám phá Việt Nam 🇻🇳"
                                 android:textSize="12sp"
-                                android:textColor="#888"
+                                android:textColor="#8E99A8"
                                 android:layout_marginTop="2dp" />
                         </LinearLayout>
 
@@ -132,7 +145,7 @@
                             android:textAllCaps="false"
                             android:textSize="12sp"
                             android:background="@android:color/white"
-                            android:textColor="#333"
+                            android:textColor="#1A1A1A"
                             android:paddingHorizontal="12dp"
                             android:elevation="0dp" />
                     </RelativeLayout>
@@ -140,7 +153,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
+                        android:layout_marginTop="16dp"
                         android:orientation="horizontal">
                         <FrameLayout
                             android:id="@+id/statTrips"
@@ -162,9 +175,62 @@
                             android:focusable="true">
                             <include layout="@layout/item_profile_stat" />
                         </FrameLayout>
+                        <FrameLayout
+                            android:id="@+id/statFavorites"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+                            <include layout="@layout/item_profile_stat" />
+                        </FrameLayout>
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:layout_marginHorizontal="20dp"
+                android:text="Huy hiệu &amp; Level"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#1A1A1A" />
+
+            <LinearLayout
+                android:id="@+id/llBadges"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="20dp"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvBadgeExplorer"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="Explorer Level"
+                    android:textColor="#0A3D62"
+                    android:textSize="12sp"
+                    android:background="#D6F5FF" />
+
+                <TextView
+                    android:id="@+id/tvBadgeNature"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="6dp"
+                    android:text="Biển / Núi"
+                    android:textColor="#1B5E20"
+                    android:textSize="12sp"
+                    android:background="#DFF5E3" />
+            </LinearLayout>
 
             <TextView
                 android:layout_width="match_parent"
@@ -174,7 +240,7 @@
                 android:text="Tài khoản"
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:textColor="#333" />
+                android:textColor="#1A1A1A" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
@@ -204,7 +270,7 @@
                 android:text="Tiện ích nhanh"
                 android:textStyle="bold"
                 android:textSize="16sp"
-                android:textColor="#333" />
+                android:textColor="#1A1A1A" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
@@ -224,11 +290,31 @@
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginStart="65dp" android:layout_marginEnd="15dp"/>
                     <include android:id="@+id/optMyReviews" layout="@layout/item_profile_option" />
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginStart="65dp" android:layout_marginEnd="15dp"/>
+                    <include android:id="@+id/optJournal" layout="@layout/item_profile_option" />
+                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginStart="65dp" android:layout_marginEnd="15dp"/>
                     <include android:id="@+id/optNotifications" layout="@layout/item_profile_option" />
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#F0F0F0" android:layout_marginStart="65dp" android:layout_marginEnd="15dp"/>
                     <include android:id="@+id/optSettings" layout="@layout/item_profile_option" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:layout_marginHorizontal="20dp"
+                android:text="Gợi ý cho bạn"
+                android:textStyle="bold"
+                android:textSize="16sp"
+                android:textColor="#1A1A1A" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvProfileRecommendations"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:paddingHorizontal="10dp"
+                android:clipToPadding="false" />
 
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"

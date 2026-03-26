@@ -85,6 +85,19 @@
                 android:textSize="12sp"
                 android:textStyle="bold" />
 
+            <ImageView
+                android:id="@+id/ivFavoriteTour"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_alignParentEnd="true"
+                android:layout_marginEnd="10dp"
+                android:layout_marginTop="48dp"
+                android:padding="5dp"
+                android:background="@drawable/bg_search"
+                android:src="@drawable/ic_heart_outline"
+                android:contentDescription="Favorite"
+                app:tint="#FF6B6B" />
+
             <!-- Icon Play nhỏ báo hiệu có video -->
             <ImageView
                 android:id="@+id/ivPlayIcon"

@@ -24,7 +24,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
     private static final String DATABASE_NAME = "vntravel.db";
-    private static final int DATABASE_VERSION = 37; // Bumped version for trips cancellations
+    private static final int DATABASE_VERSION = 38; // Bumped version for favorites item type
     private static final String FALLBACK_TOUR_IMAGE = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1400&q=80";
 
     private static final String TABLE_TOURS = "tours";
@@ -133,8 +133,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 ")");
         db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FAVORITES + " (" +
                 COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                COLUMN_TITLE + " TEXT UNIQUE, " +
-                COLUMN_CREATED_AT + " TEXT) ");
+                COLUMN_TITLE + " TEXT, " +
+                COLUMN_ITEM_TYPE + " TEXT, " +
+                COLUMN_CREATED_AT + " TEXT, " +
+                "UNIQUE(" + COLUMN_TITLE + ", " + COLUMN_ITEM_TYPE + ")) ");
         db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_JOURNAL + " (" +
                 COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COLUMN_TITLE + " TEXT, " +
@@ -420,8 +422,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     private void insertFavorite(SQLiteDatabase db, String title) {
+        insertFavorite(db, title, "Tour");
+    }
+
+    private void insertFavorite(SQLiteDatabase db, String title, String itemType) {
         ContentValues v = new ContentValues();
         v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_ITEM_TYPE, itemType);
         v.put(COLUMN_CREATED_AT, new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date()));
         db.insert(TABLE_FAVORITES, null, v);
     }
@@ -560,6 +567,33 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
+    public Hotel getHotelByTitle(String title) {
+        if (title == null || title.trim().isEmpty()) return null;
+        Cursor c = getReadableDatabase().query(TABLE_HOTELS, null, COLUMN_TITLE + " = ?", new String[]{title}, null, null, null, "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            return null;
+        }
+        int latitudeIndex = c.getColumnIndex(COLUMN_LATITUDE);
+        int longitudeIndex = c.getColumnIndex(COLUMN_LONGITUDE);
+        double latitude = latitudeIndex >= 0 ? c.getDouble(latitudeIndex) : 0.0;
+        double longitude = longitudeIndex >= 0 ? c.getDouble(longitudeIndex) : 0.0;
+        Hotel hotel = new Hotel(
+                c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
+                c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                latitude,
+                longitude
+        );
+        c.close();
+        return hotel;
+    }
+
     public List<Combo> getAllCombos() {
         List<Combo> list = new ArrayList<>();
         Cursor c = getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_COMBOS, null);
@@ -695,8 +729,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<Tour> getFavoriteTours() {
         List<Tour> list = new ArrayList<>();
         String sql = "SELECT t.* FROM " + TABLE_TOURS + " t INNER JOIN " + TABLE_FAVORITES + " f " +
-                "ON t.title = f.title ORDER BY f.created_at DESC";
-        Cursor c = getReadableDatabase().rawQuery(sql, null);
+                "ON t.title = f.title WHERE f.item_type = ? ORDER BY f.created_at DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{"Tour"});
         if (c.moveToFirst()) {
             do {
                 String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
@@ -731,10 +765,118 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
+    public List<Hotel> getFavoriteHotels() {
+        List<Hotel> list = new ArrayList<>();
+        String sql = "SELECT h.* FROM " + TABLE_HOTELS + " h INNER JOIN " + TABLE_FAVORITES + " f " +
+                "ON h.title = f.title WHERE f.item_type = ? ORDER BY f.created_at DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{"Hotel"});
+        int latitudeIndex = c.getColumnIndex(COLUMN_LATITUDE);
+        int longitudeIndex = c.getColumnIndex(COLUMN_LONGITUDE);
+        if (c.moveToFirst()) {
+            do {
+                double latitude = latitudeIndex >= 0 ? c.getDouble(latitudeIndex) : 0.0;
+                double longitude = longitudeIndex >= 0 ? c.getDouble(longitudeIndex) : 0.0;
+                list.add(new Hotel(
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
+                        c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                        latitude,
+                        longitude
+                ));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public List<com.example.vntravelapp.models.FavoriteItem> getFavoriteItems() {
+        List<com.example.vntravelapp.models.FavoriteItem> items = new ArrayList<>();
+        String sql = "SELECT f.item_type, t.title, t.location, t.image_url, h.title, h.location, h.image_url " +
+                "FROM " + TABLE_FAVORITES + " f " +
+                "LEFT JOIN " + TABLE_TOURS + " t ON f.title = t.title AND f.item_type = 'Tour' " +
+                "LEFT JOIN " + TABLE_HOTELS + " h ON f.title = h.title AND f.item_type = 'Hotel' " +
+                "ORDER BY f.created_at DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, null);
+        if (c.moveToFirst()) {
+            do {
+                String type = c.getString(0);
+                String title = "Tour".equals(type) ? c.getString(1) : c.getString(4);
+                String location = "Tour".equals(type) ? c.getString(2) : c.getString(5);
+                String imageUrl = "Tour".equals(type) ? c.getString(3) : c.getString(6);
+                if (title == null) continue;
+                items.add(new com.example.vntravelapp.models.FavoriteItem(
+                        title,
+                        location == null ? "" : location,
+                        imageUrl == null ? "" : imageUrl,
+                        type
+                ));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return items;
+    }
+
+    public boolean isFavorite(String title, String itemType) {
+        if (title == null || title.trim().isEmpty()) return false;
+        Cursor c = getReadableDatabase().rawQuery(
+                "SELECT 1 FROM " + TABLE_FAVORITES + " WHERE " + COLUMN_TITLE + " = ? AND " + COLUMN_ITEM_TYPE + " = ? LIMIT 1",
+                new String[]{title, itemType}
+        );
+        boolean exists = c.moveToFirst();
+        c.close();
+        return exists;
+    }
+
+    public boolean addFavorite(String title, String itemType) {
+        if (title == null || title.trim().isEmpty()) return false;
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_ITEM_TYPE, itemType);
+        v.put(COLUMN_CREATED_AT, new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date()));
+        long inserted = getWritableDatabase().insertWithOnConflict(TABLE_FAVORITES, null, v, SQLiteDatabase.CONFLICT_IGNORE);
+        return inserted != -1;
+    }
+
     public boolean removeFavorite(String title) {
         if (title == null || title.trim().isEmpty()) return false;
         int deleted = getWritableDatabase().delete(TABLE_FAVORITES, COLUMN_TITLE + " = ?", new String[]{title});
         return deleted > 0;
+    }
+
+    public boolean removeFavorite(String title, String itemType) {
+        if (title == null || title.trim().isEmpty()) return false;
+        int deleted = getWritableDatabase().delete(TABLE_FAVORITES,
+                COLUMN_TITLE + " = ? AND " + COLUMN_ITEM_TYPE + " = ?",
+                new String[]{title, itemType});
+        return deleted > 0;
+    }
+
+    public int getFavoriteCount() {
+        Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM " + TABLE_FAVORITES, null);
+        int count = 0;
+        if (c.moveToFirst()) count = c.getInt(0);
+        c.close();
+        return count;
+    }
+
+    public List<String> getFavoriteTitles(String itemType) {
+        List<String> titles = new ArrayList<>();
+        Cursor c = getReadableDatabase().rawQuery(
+                "SELECT " + COLUMN_TITLE + " FROM " + TABLE_FAVORITES + " WHERE " + COLUMN_ITEM_TYPE + " = ?",
+                new String[]{itemType}
+        );
+        if (c.moveToFirst()) {
+            do {
+                titles.add(c.getString(0));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return titles;
     }
 
     public List<String> getVisitedLocations() {

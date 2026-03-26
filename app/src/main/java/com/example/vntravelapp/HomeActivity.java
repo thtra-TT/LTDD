@@ -16,6 +16,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView;
 public class HomeActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNav;
+    private int pendingTripTab = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +39,14 @@ public class HomeActivity extends AppCompatActivity {
             } else if (id == R.id.nav_map) {
                 selectedFragment = new MapFragment();
             } else if (id == R.id.nav_trip) {
-                selectedFragment = new TripFragment();
+                TripFragment tripFragment = new TripFragment();
+                if (pendingTripTab >= 0) {
+                    Bundle args = new Bundle();
+                    args.putInt(TripFragment.ARG_INITIAL_TAB, pendingTripTab);
+                    tripFragment.setArguments(args);
+                    pendingTripTab = -1;
+                }
+                selectedFragment = tripFragment;
             } else if (id == R.id.nav_profile) {
                 selectedFragment = new ProfileFragment();
             }
@@ -95,5 +103,10 @@ public class HomeActivity extends AppCompatActivity {
         if (bottomNav != null) {
             bottomNav.setSelectedItemId(menuItemId);
         }
+    }
+
+    public void openTripsTab(int tabIndex) {
+        pendingTripTab = tabIndex;
+        selectTab(R.id.nav_trip);
     }
 }

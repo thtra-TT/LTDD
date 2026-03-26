@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">VN Travel App</string>
+    <string name="trip_item_upcoming">Sắp đi</string>
+    <string name="trip_count_badge">(0)</string>
 </resources>

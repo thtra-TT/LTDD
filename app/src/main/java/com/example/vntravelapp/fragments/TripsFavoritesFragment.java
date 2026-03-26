@@ -15,8 +15,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.vntravelapp.R;
-import com.example.vntravelapp.adapters.FavoriteCardAdapter;
+import com.example.vntravelapp.adapters.FavoritesAdapter;
 import com.example.vntravelapp.database.DatabaseHelper;
+import com.example.vntravelapp.models.FavoriteItem;
+import com.example.vntravelapp.models.Hotel;
 import com.example.vntravelapp.models.Tour;
 
 import java.util.ArrayList;
@@ -27,7 +29,7 @@ public class TripsFavoritesFragment extends Fragment {
     private SwipeRefreshLayout swipeRefreshLayout;
     private RecyclerView rvFavorites;
     private TextView tvEmpty;
-    private FavoriteCardAdapter adapter;
+    private FavoritesAdapter adapter;
     private DatabaseHelper db;
 
     @Nullable
@@ -41,15 +43,15 @@ public class TripsFavoritesFragment extends Fragment {
         tvEmpty = view.findViewById(R.id.tvEmptyFavorites);
 
         rvFavorites.setLayoutManager(new LinearLayoutManager(getContext()));
-        adapter = new FavoriteCardAdapter(new FavoriteCardAdapter.FavoriteActionListener() {
+        adapter = new FavoritesAdapter(new FavoritesAdapter.FavoriteActionListener() {
             @Override
-            public void onOpen(Tour tour) {
-                openTourDetail(tour);
+            public void onOpen(FavoriteItem item) {
+                openFavoriteDetail(item);
             }
 
             @Override
-            public void onRemove(Tour tour) {
-                db.removeFavorite(tour.getTitle());
+            public void onRemove(FavoriteItem item) {
+                db.removeFavorite(item.getTitle(), item.getItemType());
                 loadFavorites();
                 Toast.makeText(getContext(), "Đã xóa khỏi yêu thích", Toast.LENGTH_SHORT).show();
             }
@@ -63,13 +65,49 @@ public class TripsFavoritesFragment extends Fragment {
     }
 
     private void loadFavorites() {
-        List<Tour> list = db.getFavoriteTours();
+        List<FavoriteItem> list = db.getFavoriteItems();
         adapter.submitList(list);
         tvEmpty.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
         swipeRefreshLayout.setRefreshing(false);
     }
 
-    private void openTourDetail(Tour tour) {
+    private void openFavoriteDetail(FavoriteItem item) {
+        if ("Hotel".equals(item.getItemType())) {
+            Hotel hotel = db.getHotelByTitle(item.getTitle());
+            if (hotel == null) {
+                Toast.makeText(getContext(), "Không tìm thấy chi tiết khách sạn", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            DetailFragment fragment = DetailFragment.newInstance(
+                    hotel.getName(),
+                    hotel.getLocation(),
+                    hotel.getPrice(),
+                    hotel.getDescription(),
+                    "",
+                    "",
+                    "",
+                    hotel.getImageRes(),
+                    hotel.getImageUrl(),
+                    new ArrayList<>(),
+                    null,
+                    hotel.getRating(),
+                    hotel.getReviewCount(),
+                    null,
+                    null
+            );
+            requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.fragment_container, fragment)
+                    .addToBackStack(null)
+                    .commit();
+            return;
+        }
+
+        Tour tour = db.getTourByTitle(item.getTitle());
+        if (tour == null) {
+            Toast.makeText(getContext(), "Không tìm thấy chi tiết tour", Toast.LENGTH_SHORT).show();
+            return;
+        }
         DetailFragment fragment = DetailFragment.newInstance(
                 tour.getTitle(),
                 tour.getLocation(),
