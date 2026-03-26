@@ -26,11 +26,13 @@ public class BookingFragment extends Fragment {
     private EditText edtName, edtPhone, edtEmail;
     private TextView tvTotal, tvTotalInline, tvPriceDetail;
     private Button btnConfirm;
+    private TextView tvSelectedDate;
 
     private String title, priceStr, location, imageUrl;
     private int imageRes;
     private double priceAdult;
     private String startDate, endDate;
+    private String selectedDateStr = "";
 
     public static BookingFragment newInstance(String title, String price, String location,
                                               String imageUrl, int imageRes, String startDate, String endDate) {
@@ -45,10 +47,6 @@ public class BookingFragment extends Fragment {
         args.putString("endDate", endDate);
         f.setArguments(args);
         return f;
-    }
-
-    public static BookingFragment newInstance(String title, String price, String location, String imageUrl, int imageRes) {
-        return newInstance(title, price, location, imageUrl, imageRes, null, null);
     }
 
     @Override
@@ -66,16 +64,13 @@ public class BookingFragment extends Fragment {
         }
     }
 
-    private boolean isTourActive() {
-        return Tour.isActiveOn(startDate, endDate, null);
-    }
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
         View view = inflater.inflate(R.layout.fragment_booking, container, false);
 
+        // Ánh xạ View
         edtAdult      = view.findViewById(R.id.edtAdult);
         edtChild      = view.findViewById(R.id.edtChild);
         edtName       = view.findViewById(R.id.edtName);
@@ -85,11 +80,13 @@ public class BookingFragment extends Fragment {
         tvTotalInline = view.findViewById(R.id.tvTotalInline);
         tvPriceDetail = view.findViewById(R.id.tvPriceDetail);
         btnConfirm    = view.findViewById(R.id.btnConfirm);
+        tvSelectedDate = view.findViewById(R.id.tvSelectedDate);
 
         TextView btnAdultMinus = view.findViewById(R.id.btnAdultMinus);
         TextView btnAdultPlus  = view.findViewById(R.id.btnAdultPlus);
         TextView btnChildMinus = view.findViewById(R.id.btnChildMinus);
         TextView btnChildPlus  = view.findViewById(R.id.btnChildPlus);
+        ImageView ivBack       = view.findViewById(R.id.ivBack);
 
         ImageView ivImage     = view.findViewById(R.id.ivBookingImage);
         TextView  tvBTitle    = view.findViewById(R.id.tvBookingTitle);
@@ -97,110 +94,103 @@ public class BookingFragment extends Fragment {
         TextView  tvBLocation = view.findViewById(R.id.tvBookingLocation);
         TextView  tvBPrice    = view.findViewById(R.id.tvBookingPrice);
 
+        // Hiển thị dữ liệu
         tvBTitle.setText(title);
         tvBTitleCard.setText(title);
         tvBLocation.setText("📍 " + location);
         tvBPrice.setText(format(priceAdult) + " / người");
 
         if (imageUrl != null && !imageUrl.isEmpty()) {
-            Glide.with(this).load(imageUrl)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .centerCrop().into(ivImage);
+            Glide.with(this).load(imageUrl).placeholder(android.R.drawable.ic_menu_gallery).centerCrop().into(ivImage);
         } else if (imageRes != 0) {
             ivImage.setImageResource(imageRes);
         }
 
-        btnAdultMinus.setOnClickListener(v -> {
-            if (countAdult > 0) {
-                countAdult--;
-                edtAdult.setText(String.valueOf(countAdult));
-                calculatePrice();
-            }
+        // Sự kiện Click
+        ivBack.setOnClickListener(v -> {
+            if (getActivity() != null) getActivity().getSupportFragmentManager().popBackStack();
         });
-        btnAdultPlus.setOnClickListener(v -> {
-            countAdult++;
-            edtAdult.setText(String.valueOf(countAdult));
-            calculatePrice();
-        });
+        
+        tvSelectedDate.setOnClickListener(v -> showDatePicker());
 
-        btnChildMinus.setOnClickListener(v -> {
-            if (countChild > 0) {
-                countChild--;
-                edtChild.setText(String.valueOf(countChild));
-                calculatePrice();
-            }
-        });
-        btnChildPlus.setOnClickListener(v -> {
-            countChild++;
-            edtChild.setText(String.valueOf(countChild));
-            calculatePrice();
-        });
+        btnAdultMinus.setOnClickListener(v -> { if (countAdult > 0) { countAdult--; edtAdult.setText(String.valueOf(countAdult)); calculatePrice(); } });
+        btnAdultPlus.setOnClickListener(v -> { countAdult++; edtAdult.setText(String.valueOf(countAdult)); calculatePrice(); });
+        btnChildMinus.setOnClickListener(v -> { if (countChild > 0) { countChild--; edtChild.setText(String.valueOf(countChild)); calculatePrice(); } });
+        btnChildPlus.setOnClickListener(v -> { countChild++; edtChild.setText(String.valueOf(countChild)); calculatePrice(); });
 
         calculatePrice();
-
         btnConfirm.setOnClickListener(v -> handleBooking());
 
-        if (!isTourActive()) {
-            btnConfirm.setEnabled(false);
-            btnConfirm.setText("Tour hết hiệu lực");
-            btnConfirm.setBackgroundColor(0xFF9E9E9E);
-        }
-
         return view;
+    }
+
+    private void showDatePicker() {
+        final java.util.Calendar c = java.util.Calendar.getInstance();
+        android.app.DatePickerDialog dpd = new android.app.DatePickerDialog(requireContext(),
+                (view, y, m, d) -> {
+                    selectedDateStr = String.format(Locale.getDefault(), "%d-%02d-%02d", y, m + 1, d);
+                    tvSelectedDate.setText(String.format(Locale.getDefault(), "%02d/%02d/%d", d, m + 1, y));
+                }, c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH), c.get(java.util.Calendar.DAY_OF_MONTH));
+
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            long minLimit = System.currentTimeMillis();
+
+            // Ràng buộc theo startDate của Tour
+            if (startDate != null && !startDate.trim().isEmpty()) {
+                Date sDate = sdf.parse(startDate.trim());
+                if (sDate != null && sDate.getTime() > minLimit) minLimit = sDate.getTime();
+            }
+            dpd.getDatePicker().setMinDate(minLimit);
+
+            // Ràng buộc theo endDate của Tour
+            if (endDate != null && !endDate.trim().isEmpty()) {
+                Date eDate = sdf.parse(endDate.trim());
+                if (eDate != null) dpd.getDatePicker().setMaxDate(eDate.getTime());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        dpd.show();
     }
 
     private void calculatePrice() {
         double childPrice = priceAdult * 0.7;
         double total = (countAdult * priceAdult) + (countChild * childPrice);
-
-        tvPriceDetail.setText(
-                "Người lớn (" + countAdult + " x " + format(priceAdult) + ")\n" +
-                        "Trẻ em    (" + countChild + " x " + format(childPrice) + ")"
-        );
-
-        String totalStr = format(total);
-        tvTotal.setText(totalStr);
-        tvTotalInline.setText(totalStr);
+        tvPriceDetail.setText("Người lớn (" + countAdult + " x " + format(priceAdult) + ")\nTrẻ em (" + countChild + " x " + format(childPrice) + ")");
+        tvTotal.setText(format(total));
+        tvTotalInline.setText(format(total));
     }
 
-    private String format(double price) {
-        return String.format("%,.0fđ", price);
-    }
-
-    private double parsePrice(String s) {
-        try {
-            return Double.parseDouble(s.replace(".", "").replace("đ", ""));
-        } catch (Exception e) { return 0; }
-    }
+    private String format(double p) { return String.format("%,.0fđ", p); }
+    private double parsePrice(String s) { try { return Double.parseDouble(s.replace(".", "").replace("đ", "")); } catch (Exception e) { return 0; } }
 
     private void handleBooking() {
-        if (!isTourActive()) {
-            Toast.makeText(getContext(), "Tour này hiện không khả dụng!", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String name  = edtName.getText().toString().trim();
+        String name = edtName.getText().toString().trim();
         String phone = edtPhone.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
 
-        if (name.isEmpty() || phone.isEmpty() || email.isEmpty() || countAdult == 0) {
-            Toast.makeText(getContext(), "Nhập đầy đủ thông tin!", Toast.LENGTH_SHORT).show();
+        if (selectedDateStr.isEmpty()) {
+            Toast.makeText(getContext(), "Vui lòng chọn ngày khởi hành!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (name.isEmpty() || phone.isEmpty() || countAdult == 0) {
+            Toast.makeText(getContext(), "Vui lòng nhập đủ thông tin và ít nhất 1 người lớn!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         DatabaseHelper db = new DatabaseHelper(getContext());
-        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
-        
-        boolean success = db.insertOrder(title, today,
-                countAdult + countChild, name, phone);
+        boolean success = db.insertOrder(title, selectedDateStr, countAdult + countChild, name, phone);
 
         if (success) {
-            Toast.makeText(getContext(), "Đặt thành công!", Toast.LENGTH_SHORT).show();
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, new TripFragment())
-                    .addToBackStack(null)
-                    .commit();
+            Toast.makeText(getContext(), "Đặt tour thành công!", Toast.LENGTH_SHORT).show();
+            if (getActivity() != null) {
+                requireActivity().getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, new TripFragment())
+                        .commit();
+            }
+        } else {
+            Toast.makeText(getContext(), "Có lỗi xảy ra khi lưu đơn hàng!", Toast.LENGTH_SHORT).show();
         }
     }
 }
