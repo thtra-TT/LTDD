@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tvChipText"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginEnd="8dp"
+    android:layout_marginBottom="8dp"
+    android:background="#EEF2FF"
+    android:paddingHorizontal="10dp"
+    android:paddingVertical="6dp"
+    android:text="Chip"
+    android:textColor="#3F51B5"
+    android:textSize="12sp" />
+

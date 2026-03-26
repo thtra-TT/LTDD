@@ -24,7 +24,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
     private static final String DATABASE_NAME = "vntravel.db";
-    private static final int DATABASE_VERSION = 35; // Bumped version for full 20-tour refresh
+    private static final int DATABASE_VERSION = 37; // Bumped version for trips cancellations
     private static final String FALLBACK_TOUR_IMAGE = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1400&q=80";
 
     private static final String TABLE_TOURS = "tours";
@@ -33,6 +33,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TABLE_TICKETS = "tickets";
     private static final String TABLE_USERS = "users";
     private static final String TABLE_ORDERS = "orders";
+    private static final String TABLE_FAVORITES = "favorites";
+    private static final String TABLE_JOURNAL = "journal_entries";
+    private static final String TABLE_REVIEWS = "user_reviews";
+    private static final String TABLE_NOTIFICATIONS = "notifications";
+    private static final String TABLE_CANCELLED_TRIPS = "trip_cancellations";
 
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_TITLE = "title";
@@ -58,10 +63,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_FULLNAME = "fullname";
     private static final String COLUMN_PHONE = "phone";
     private static final String COLUMN_USER_IMAGE = "user_image";
-
+    private static final String COLUMN_CREATED_AT = "created_at";
+    private static final String COLUMN_CONTENT = "content";
+    private static final String COLUMN_ITEM_TYPE = "item_type";
+    private static final String COLUMN_ITEM_TITLE = "item_title";
+    private static final String COLUMN_STATUS = "status";
     private static final String COLUMN_ITINERARY = "itinerary";
     private static final String COLUMN_INCLUDED = "included";
     private static final String COLUMN_EXCLUDED = "excluded";
+    private static final String COLUMN_REASON = "reason";
+
     private static final String COLUMN_LATITUDE = "latitude";
     private static final String COLUMN_LONGITUDE = "longitude";
     private static final String COLUMN_START_DATE = "start_date";
@@ -120,6 +131,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "name TEXT," +
                 "phone TEXT" +
                 ")");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FAVORITES + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_TITLE + " TEXT UNIQUE, " +
+                COLUMN_CREATED_AT + " TEXT) ");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_JOURNAL + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_TITLE + " TEXT, " +
+                COLUMN_CONTENT + " TEXT, " +
+                COLUMN_IMAGE_URL + " TEXT, " +
+                COLUMN_RATING + " REAL, " +
+                COLUMN_CREATED_AT + " TEXT) ");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_REVIEWS + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_ITEM_TYPE + " TEXT, " +
+                COLUMN_ITEM_TITLE + " TEXT, " +
+                COLUMN_RATING + " REAL, " +
+                COLUMN_CONTENT + " TEXT, " +
+                COLUMN_CREATED_AT + " TEXT) ");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_NOTIFICATIONS + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_TITLE + " TEXT, " +
+                COLUMN_CONTENT + " TEXT, " +
+                COLUMN_STATUS + " TEXT, " +
+                COLUMN_CREATED_AT + " TEXT) ");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_CANCELLED_TRIPS + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_TITLE + " TEXT, " +
+                COLUMN_DATE_RANGE + " TEXT, " +
+                COLUMN_REASON + " TEXT, " +
+                COLUMN_CREATED_AT + " TEXT) ");
         seedData(db);
     }
 
@@ -293,6 +334,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         insertCombo(db, "Siêu Combo Phú Quốc 3N2Đ", "Kiên Giang", "Vé máy bay + VinOasis 5 sao + Buffet sáng & Vé VinWonders.", "7.500.000đ", "5.850.000đ", 0, "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb", 4.9f, "BEST SELLER");
 
         insertTicket(db, "Vé Máy Bay Hà Nội - Đà Nẵng", "Năm 2026", "1.590.000đ", "Giảm 20%", "Khứ hồi", 0, "https://images.unsplash.com/photo-1436491865332-7a61a109cc05");
+
+        // Seed profile extras
+        insertFavorite(db, "Vịnh Hạ Long: Tuyệt Tác Thiên Nhiên - Du Thuyền 5 Sao");
+        insertFavorite(db, "Hội An: Ký Ức Đèn Lồng & Tinh Hoa Ẩm Thực Miền Trung");
+        insertFavorite(db, "Phú Quốc: Tour 4 Đảo Thiên Đường - Cano Cao Tốc");
+
+        insertJournalEntry(db, "Bình minh trên vịnh", "Sáng sớm ngắm bình minh từ boong tàu, mặt nước phản chiếu ánh vàng rực rỡ. Một khoảnh khắc đáng nhớ.", "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee", 4.8f, "2026-03-12");
+        insertJournalEntry(db, "Phố cổ lên đèn", "Dạo bước dưới ánh đèn lồng Hội An, thưởng thức cao lầu và nghe tiếng đàn bầu trong gió.", "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee", 4.7f, "2026-05-02");
+
+        insertReview(db, "Tour", "Đà Lạt: Thành Phố Ngàn Hoa - Săn Mây & Thông Reo", 4.9f, "Lịch trình hợp lý, săn mây tuyệt vời, đồ ăn ngon.", "2026-02-18");
+        insertReview(db, "Tour", "Sapa: Chinh Phục Đỉnh Fansipan - Mây Ngàn Tây Bắc", 4.8f, "HDV nhiệt tình, cảnh đẹp đúng mùa, trải nghiệm rất đáng giá.", "2026-01-28");
+
+        insertNotification(db, "Ưu đãi cuối tuần", "Giảm đến 20% tour biển hè 2026. Đặt sớm để giữ chỗ đẹp.", "new", "2026-03-20");
+        insertNotification(db, "Nhắc lịch chuyến đi", "Bạn có chuyến đi Đà Lạt vào 12/04/2026. Chuẩn bị hành lý nhé!", "info", "2026-03-21");
+        insertCancelledTrip(db, "Mũi Né: Đồi Cát Bay - Trải Nghiệm Xe Jeep Địa Hình", "2026-06-12", "Thời tiết xấu");
     }
 
     private void insertTour(SQLiteDatabase db, String t, String l, String d,
@@ -363,18 +419,49 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert(TABLE_TICKETS, null, v);
     }
 
-    public boolean insertOrder(String title, String date, int people, String name, String phone) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
+    private void insertFavorite(SQLiteDatabase db, String title) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_CREATED_AT, new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date()));
+        db.insert(TABLE_FAVORITES, null, v);
+    }
 
-        values.put("title", title);
-        values.put("date", date);
-        values.put("people", people);
-        values.put("name", name);
-        values.put("phone", phone);
+    private void insertJournalEntry(SQLiteDatabase db, String title, String content, String imageUrl, float rating, String createdAt) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_CONTENT, content);
+        v.put(COLUMN_IMAGE_URL, imageUrl);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        db.insert(TABLE_JOURNAL, null, v);
+    }
 
-        long result = db.insert(TABLE_ORDERS, null, values);
-        return result != -1;
+    private void insertReview(SQLiteDatabase db, String itemType, String itemTitle, float rating, String content, String createdAt) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_ITEM_TYPE, itemType);
+        v.put(COLUMN_ITEM_TITLE, itemTitle);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_CONTENT, content);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        db.insert(TABLE_REVIEWS, null, v);
+    }
+
+    private void insertNotification(SQLiteDatabase db, String title, String content, String status, String createdAt) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_CONTENT, content);
+        v.put(COLUMN_STATUS, status);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        db.insert(TABLE_NOTIFICATIONS, null, v);
+    }
+
+    private void insertCancelledTrip(SQLiteDatabase db, String title, String date, String reason) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_DATE_RANGE, date);
+        v.put(COLUMN_REASON, reason);
+        v.put(COLUMN_CREATED_AT, new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date()));
+        db.insert(TABLE_CANCELLED_TRIPS, null, v);
     }
 
     @Override
@@ -385,6 +472,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_TICKETS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDERS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_FAVORITES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_JOURNAL);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_REVIEWS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_NOTIFICATIONS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_CANCELLED_TRIPS);
         onCreate(db);
     }
 
@@ -412,58 +504,113 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " + COLUMN_EMAIL + " = ? AND " + COLUMN_PASSWORD + " = ?", new String[]{email, password});
     }
 
-    public List<Tour> getAllTours() {
-        return getToursOrderedBy("book_count DESC, rating DESC");
+    public boolean insertOrder(String title, String date, int people, String name, String phone) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put("title", title);
+        values.put("date", date);
+        values.put("people", people);
+        values.put("name", name);
+        values.put("phone", phone);
+        return db.insert(TABLE_ORDERS, null, values) != -1;
     }
 
-    // Backend-style source for /tours (already sorted by popularity first)
-    public List<Tour> getTours() {
-        return getAllTours();
+    public Cursor getAllOrders() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM " + TABLE_ORDERS, null);
+    }
+
+    public List<Tour> getAllTours() {
+        return getToursOrderedBy("book_count DESC, rating DESC");
     }
 
     public List<Tour> getPopularTours() {
         return getPopularTours(5);
     }
 
-    // Backend-style source for /tours/popular where limit is kept in [5..10]
     public List<Tour> getPopularTours(int limit) {
         int safeLimit = Math.max(5, Math.min(10, limit));
         return getToursOrderedBy("book_count DESC, rating DESC LIMIT " + safeLimit);
     }
 
-    public boolean canBookTour(String tourTitle, String selectedDateYmd) {
-        if (tourTitle == null || tourTitle.trim().isEmpty()) return false;
-
-        Cursor c = getReadableDatabase().query(
-                TABLE_TOURS,
-                new String[]{COLUMN_START_DATE, COLUMN_END_DATE},
-                COLUMN_TITLE + " = ?",
-                new String[]{tourTitle.trim()},
-                null,
-                null,
-                null,
-                "1"
-        );
-
-        try {
-            if (!c.moveToFirst()) return false;
-            String start = c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE));
-            String end = c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE));
-
-            Date targetDate = null;
-            if (selectedDateYmd != null && !selectedDateYmd.trim().isEmpty()) {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-                try {
-                    targetDate = sdf.parse(selectedDateYmd.trim());
-                } catch (ParseException ignored) {
-                    targetDate = null;
-                }
-            }
-
-            return Tour.isActiveOn(start, end, targetDate);
-        } finally {
-            c.close();
+    public List<Hotel> getAllHotels() {
+        List<Hotel> list = new ArrayList<>();
+        Cursor c = getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_HOTELS, null);
+        int latitudeIndex = c.getColumnIndex(COLUMN_LATITUDE);
+        int longitudeIndex = c.getColumnIndex(COLUMN_LONGITUDE);
+        if (c.moveToFirst()) {
+            do {
+                double latitude = latitudeIndex >= 0 ? c.getDouble(latitudeIndex) : 0.0;
+                double longitude = longitudeIndex >= 0 ? c.getDouble(longitudeIndex) : 0.0;
+                list.add(new Hotel(
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
+                        c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                        latitude,
+                        longitude
+                ));
+            } while (c.moveToNext());
         }
+        c.close();
+        return list;
+    }
+
+    public List<Combo> getAllCombos() {
+        List<Combo> list = new ArrayList<>();
+        Cursor c = getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_COMBOS, null);
+        if (c.moveToFirst()) {
+            do {
+                list.add(new Combo(
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_ORIGINAL_PRICE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
+                        c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE))
+                ));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public List<TicketOffer> getAllTickets() {
+        List<TicketOffer> list = new ArrayList<>();
+        Cursor c = getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_TICKETS, null);
+        if (c.moveToFirst()) {
+            do {
+                list.add(new TicketOffer(
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DATE_RANGE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DISCOUNT)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_TYPE)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL))
+                ));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public List<MapItem> getAllMapItems() {
+        List<MapItem> mapItems = new ArrayList<>();
+        for (Tour tour : getAllTours()) {
+            mapItems.add(MapItem.fromTour(tour));
+        }
+        for (Hotel hotel : getAllHotels()) {
+            mapItems.add(MapItem.fromHotel(hotel));
+        }
+        return mapItems;
     }
 
     private List<Tour> getToursOrderedBy(String orderBy) {
@@ -474,10 +621,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
                 String rawImageUrls = null;
                 int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
-                if (imageUrlsIndex >= 0) {
-                    rawImageUrls = c.getString(imageUrlsIndex);
-                }
-
+                if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
                 list.add(new Tour(
                         c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
                         c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
@@ -506,26 +650,80 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
-    public List<Hotel> getAllHotels() {
-        List<Hotel> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_HOTELS, null);
-        int latitudeIndex = c.getColumnIndex(COLUMN_LATITUDE);
-        int longitudeIndex = c.getColumnIndex(COLUMN_LONGITUDE);
+    public List<Tour> getRecommendedTours(int limit) {
+        int safeLimit = Math.max(4, Math.min(12, limit));
+        return getToursOrderedBy("book_count DESC, rating DESC LIMIT " + safeLimit);
+    }
+
+    public Tour getTourByTitle(String title) {
+        if (title == null || title.trim().isEmpty()) return null;
+        Cursor c = getReadableDatabase().query(TABLE_TOURS, null, COLUMN_TITLE + " = ?", new String[]{title}, null, null, null, "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            return null;
+        }
+        String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
+        String rawImageUrls = null;
+        int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
+        if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
+        Tour tour = new Tour(
+                c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DURATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_ITINERARY)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_INCLUDED)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_EXCLUDED)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                imageUrl,
+                parseImageUrls(rawImageUrls, imageUrl),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_VIDEO_URL)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE)),
+                c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_BOOK_COUNT)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE))
+        );
+        c.close();
+        return tour;
+    }
+
+    public List<Tour> getFavoriteTours() {
+        List<Tour> list = new ArrayList<>();
+        String sql = "SELECT t.* FROM " + TABLE_TOURS + " t INNER JOIN " + TABLE_FAVORITES + " f " +
+                "ON t.title = f.title ORDER BY f.created_at DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, null);
         if (c.moveToFirst()) {
             do {
-                double latitude = latitudeIndex >= 0 ? c.getDouble(latitudeIndex) : 0.0;
-                double longitude = longitudeIndex >= 0 ? c.getDouble(longitudeIndex) : 0.0;
-                list.add(new Hotel(
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
-                    c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
-                    latitude,
-                    longitude
+                String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
+                String rawImageUrls = null;
+                int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
+                if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
+                list.add(new Tour(
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DURATION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_ITINERARY)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_INCLUDED)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_EXCLUDED)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                        imageUrl,
+                        parseImageUrls(rawImageUrls, imageUrl),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_VIDEO_URL)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE)),
+                        c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_BOOK_COUNT)),
+                        c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
+                        c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE))
                 ));
             } while (c.moveToNext());
         }
@@ -533,62 +731,180 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
-    public List<MapItem> getAllMapItems() {
-        List<MapItem> mapItems = new ArrayList<>();
-        for (Tour tour : getAllTours()) {
-            mapItems.add(MapItem.fromTour(tour));
-        }
-        for (Hotel hotel : getAllHotels()) {
-            mapItems.add(MapItem.fromHotel(hotel));
-        }
-        return mapItems;
+    public boolean removeFavorite(String title) {
+        if (title == null || title.trim().isEmpty()) return false;
+        int deleted = getWritableDatabase().delete(TABLE_FAVORITES, COLUMN_TITLE + " = ?", new String[]{title});
+        return deleted > 0;
     }
 
-    public List<Combo> getAllCombos() {
-        List<Combo> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_COMBOS, null);
+    public List<String> getVisitedLocations() {
+        List<String> locations = new ArrayList<>();
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String sql = "SELECT DISTINCT t.location FROM " + TABLE_ORDERS + " o LEFT JOIN " + TABLE_TOURS + " t " +
+                "ON o.title = t.title WHERE o.date < ? ORDER BY o.date DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{today});
         if (c.moveToFirst()) {
             do {
-                list.add(new Combo(
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_ORIGINAL_PRICE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
-                    c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE))
-                ));
+                String location = c.getString(0);
+                if (location == null || location.trim().isEmpty()) location = "Việt Nam";
+                locations.add(location);
+            } while (c.moveToNext());
+        }
+        c.close();
+        return locations;
+    }
+
+    public int getTripCount() {
+        Cursor c = getReadableDatabase().rawQuery("SELECT COUNT(*) FROM " + TABLE_ORDERS, null);
+        int count = 0;
+        if (c.moveToFirst()) count = c.getInt(0);
+        c.close();
+        return count;
+    }
+
+    public int getVisitedLocationCount() {
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String sql = "SELECT COUNT(DISTINCT t.location) FROM " + TABLE_ORDERS + " o LEFT JOIN " + TABLE_TOURS + " t " +
+                "ON o.title = t.title WHERE o.date < ?";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{today});
+        int count = 0;
+        if (c.moveToFirst()) count = c.getInt(0);
+        c.close();
+        return count;
+    }
+
+    public boolean updateUserProfile(String oldEmail, String newEmail, String fullname, String phone) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        if (newEmail != null && !newEmail.trim().isEmpty()) values.put(COLUMN_EMAIL, newEmail.trim());
+        if (fullname != null) values.put(COLUMN_FULLNAME, fullname.trim());
+        if (phone != null) values.put(COLUMN_PHONE, phone.trim());
+        int updated = db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", new String[]{oldEmail});
+        return updated > 0;
+    }
+
+    public boolean updateUserPassword(String email, String oldPassword, String newPassword) {
+        if (email == null || oldPassword == null || newPassword == null) return false;
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_PASSWORD + " FROM " + TABLE_USERS + " WHERE " + COLUMN_EMAIL + " = ?", new String[]{email});
+        try {
+            if (!cursor.moveToFirst()) return false;
+            String current = cursor.getString(0);
+            if (!oldPassword.equals(current)) return false;
+        } finally {
+            cursor.close();
+        }
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PASSWORD, newPassword);
+        return db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", new String[]{email}) > 0;
+    }
+
+    public List<com.example.vntravelapp.models.ProfileTrip> getProfileTrips() {
+        List<com.example.vntravelapp.models.ProfileTrip> list = new ArrayList<>();
+        String sql = "SELECT o.title, o.date, o.people, t.location, t.price, t.image_url " +
+                "FROM " + TABLE_ORDERS + " o LEFT JOIN " + TABLE_TOURS + " t " +
+                "ON o.title = t.title ORDER BY o.date DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, null);
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        Date today = new Date();
+        if (c.moveToFirst()) {
+            do {
+                String title = c.getString(0);
+                String date = c.getString(1);
+                int people = c.getInt(2);
+                String location = c.getString(3) == null ? "Việt Nam" : c.getString(3);
+                String price = c.getString(4) == null ? (people + " người") : c.getString(4);
+                String imageUrl = c.getString(5);
+                String status = "Sắp đi";
+                try {
+                    Date d = sdf.parse(date);
+                    if (d != null && d.before(today)) status = "Đã đi";
+                } catch (ParseException ignored) {
+                    status = "Sắp đi";
+                }
+                list.add(new com.example.vntravelapp.models.ProfileTrip(title, location, date, status, price, imageUrl));
             } while (c.moveToNext());
         }
         c.close();
         return list;
     }
 
-    public List<TicketOffer> getAllTickets() {
-        List<TicketOffer> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().rawQuery("SELECT * FROM " + TABLE_TICKETS, null);
+    public List<com.example.vntravelapp.models.TripItem> getUpcomingTrips() {
+        List<com.example.vntravelapp.models.TripItem> list = new ArrayList<>();
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String sql = "SELECT o.title, o.date, o.people, t.location, t.price, t.image_url " +
+                "FROM " + TABLE_ORDERS + " o LEFT JOIN " + TABLE_TOURS + " t " +
+                "ON o.title = t.title WHERE o.date >= ? ORDER BY o.date ASC";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{today});
         if (c.moveToFirst()) {
             do {
-                list.add(new TicketOffer(
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DATE_RANGE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DISCOUNT)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_TYPE)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL))
-                ));
+                String title = c.getString(0);
+                String date = c.getString(1);
+                int people = c.getInt(2);
+                String location = c.getString(3) == null ? "Việt Nam" : c.getString(3);
+                String price = c.getString(4) == null ? (people + " người") : c.getString(4);
+                String imageUrl = c.getString(5);
+                list.add(new com.example.vntravelapp.models.TripItem(title, location, date, "Sắp đi", price, imageUrl, null));
             } while (c.moveToNext());
         }
         c.close();
         return list;
     }
 
-    public Cursor getAllOrders() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        return db.rawQuery("SELECT * FROM " + TABLE_ORDERS, null);
+    public List<com.example.vntravelapp.models.TripItem> getCompletedTrips() {
+        List<com.example.vntravelapp.models.TripItem> list = new ArrayList<>();
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        String sql = "SELECT o.title, o.date, o.people, t.location, t.price, t.image_url " +
+                "FROM " + TABLE_ORDERS + " o LEFT JOIN " + TABLE_TOURS + " t " +
+                "ON o.title = t.title WHERE o.date < ? ORDER BY o.date DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{today});
+        if (c.moveToFirst()) {
+            do {
+                String title = c.getString(0);
+                String date = c.getString(1);
+                int people = c.getInt(2);
+                String location = c.getString(3) == null ? "Việt Nam" : c.getString(3);
+                String price = c.getString(4) == null ? (people + " người") : c.getString(4);
+                String imageUrl = c.getString(5);
+                list.add(new com.example.vntravelapp.models.TripItem(title, location, date, "Đã đi", price, imageUrl, null));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public List<com.example.vntravelapp.models.TripItem> getCancelledTrips() {
+        List<com.example.vntravelapp.models.TripItem> list = new ArrayList<>();
+        String sql = "SELECT c.title, c.date_range, c.reason, t.location, t.price, t.image_url " +
+                "FROM " + TABLE_CANCELLED_TRIPS + " c LEFT JOIN " + TABLE_TOURS + " t " +
+                "ON c.title = t.title ORDER BY c.created_at DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, null);
+        if (c.moveToFirst()) {
+            do {
+                String title = c.getString(0);
+                String date = c.getString(1);
+                String reason = c.getString(2);
+                String location = c.getString(3) == null ? "Việt Nam" : c.getString(3);
+                String price = c.getString(4) == null ? "--" : c.getString(4);
+                String imageUrl = c.getString(5);
+                list.add(new com.example.vntravelapp.models.TripItem(title, location, date, "Đã hủy", price, imageUrl, reason));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public boolean cancelTrip(String title, String date, String reason) {
+        if (title == null || title.trim().isEmpty()) return false;
+        SQLiteDatabase db = getWritableDatabase();
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_DATE_RANGE, date);
+        v.put(COLUMN_REASON, reason == null ? "" : reason.trim());
+        v.put(COLUMN_CREATED_AT, new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date()));
+        long inserted = db.insert(TABLE_CANCELLED_TRIPS, null, v);
+        db.delete(TABLE_ORDERS, COLUMN_TITLE + " = ? AND date = ?", new String[]{title, date});
+        return inserted != -1;
     }
 
     private static String buildImageList(String... urls) {

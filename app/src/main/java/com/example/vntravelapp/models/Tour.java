@@ -130,7 +130,6 @@ public class Tour {
         if (startDate == null || endDate == null) return "Cả năm";
         if (startDate.endsWith("-01-01") && endDate.endsWith("-12-31")) return "Cả năm";
 
-        // Seasonal text required by UI spec
         if (startDate.matches("\\d{4}-05-\\d{2}") && endDate.matches("\\d{4}-09-\\d{2}")) {
             return "Mùa hè (Tháng 5 đến Tháng 9)";
         }
@@ -145,7 +144,7 @@ public class Tour {
     public boolean isActive() {
         return isActiveOn(startDate, endDate, null);
     }
-    
+
     public String getStatusMessage() {
         return getStatusMessage(startDate, endDate, null);
     }

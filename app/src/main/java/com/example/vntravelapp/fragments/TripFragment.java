@@ -1,79 +1,105 @@
 package com.example.vntravelapp.fragments;
 
-import android.database.Cursor;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.vntravelapp.R;
-import com.example.vntravelapp.adapters.TripAdapter;
+import com.example.vntravelapp.adapters.ProfileTourAdapter;
+import com.example.vntravelapp.adapters.TripsPagerAdapter;
 import com.example.vntravelapp.database.DatabaseHelper;
-import com.example.vntravelapp.models.Trip;
+import com.example.vntravelapp.models.Tour;
+import com.google.android.material.tabs.TabLayout;
+import com.google.android.material.tabs.TabLayoutMediator;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class TripFragment extends Fragment {
 
+    private TripsPagerAdapter pagerAdapter;
     private DatabaseHelper db;
-    private List<Trip> tripList;
-    private TripAdapter adapter;
+    private ProfileTourAdapter recommendationAdapter;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-
         View view = inflater.inflate(R.layout.fragment_trip, container, false);
-
-        RecyclerView rvTrips = view.findViewById(R.id.rvTrips);
-        rvTrips.setLayoutManager(new LinearLayoutManager(getContext()));
-
         db = new DatabaseHelper(getContext());
 
-        tripList = new ArrayList<>();
+        TabLayout tabLayout = view.findViewById(R.id.tabLayoutTrips);
+        ViewPager2 viewPager = view.findViewById(R.id.vpTrips);
+        EditText edtSearch = view.findViewById(R.id.edtTripSearch);
 
-        loadTripsFromDB();
+        pagerAdapter = new TripsPagerAdapter(this);
+        viewPager.setAdapter(pagerAdapter);
+        viewPager.setOffscreenPageLimit(3);
 
-        adapter = new TripAdapter(tripList);
-        rvTrips.setAdapter(adapter);
+        new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
+            if (position == 0) tab.setText("Sắp đi");
+            if (position == 1) tab.setText("Đã đi");
+            if (position == 2) tab.setText("Đã hủy");
+            if (position == 3) tab.setText("Yêu thích");
+        }).attach();
+
+        edtSearch.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                Fragment fragment = getChildFragmentManager().findFragmentByTag("f" + viewPager.getCurrentItem());
+                if (fragment instanceof TripsTabFragment) {
+                    ((TripsTabFragment) fragment).filter(s.toString());
+                }
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+        RecyclerView rvRecommendations = view.findViewById(R.id.rvTripRecommendations);
+        rvRecommendations.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        recommendationAdapter = new ProfileTourAdapter(new ArrayList<>(), this::openTourDetail);
+        rvRecommendations.setAdapter(recommendationAdapter);
+        loadRecommendations();
 
         return view;
     }
 
-    private void loadTripsFromDB() {
-        Cursor cursor = db.getAllOrders();
+    private void loadRecommendations() {
+        List<Tour> tours = db.getRecommendedTours(6);
+        recommendationAdapter.updateItems(tours);
+    }
 
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-
-                // ⚠️ Sửa index theo DB của bạn
-                String title = cursor.getString(1);
-                String date = cursor.getString(2);
-                int people = cursor.getInt(3);
-
-                // Fake thêm data để khớp UI
-                Trip trip = new Trip(
-                        title,
-                        "Việt Nam",          // location (có thể lưu DB sau)
-                        date,
-                        "Đã đặt",           // status
-                        "CODE" + date,     // booking code
-                        people + " người", // giá fake
-                        R.mipmap.ic_launcher,
-                        false
-                );
-
-                tripList.add(trip);
-            }
-
-            cursor.close();
-        }
+    private void openTourDetail(Tour tour) {
+        DetailFragment fragment = DetailFragment.newInstance(
+                tour.getTitle(),
+                tour.getLocation(),
+                tour.getPrice(),
+                tour.getDescription(),
+                tour.getItinerary(),
+                tour.getIncluded(),
+                tour.getExcluded(),
+                tour.getImageResId(),
+                tour.getPrimaryImageUrl(),
+                new ArrayList<>(tour.getImageUrls()),
+                tour.getVideoUrl(),
+                tour.getRating(),
+                tour.getReviewCount(),
+                tour.getStartDate(),
+                tour.getEndDate()
+        );
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 }

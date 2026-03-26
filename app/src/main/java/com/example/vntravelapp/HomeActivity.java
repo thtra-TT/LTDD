@@ -90,4 +90,10 @@ public class HomeActivity extends AppCompatActivity {
     public void showBottomNav() {
         bottomNav.setVisibility(View.VISIBLE);
     }
+
+    public void selectTab(int menuItemId) {
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(menuItemId);
+        }
+    }
 }
