@@ -13,7 +13,7 @@
         <!-- Header Section -->
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="220dp"
+            android:layout_height="wrap_content"
             android:background="@drawable/bg_home_header"
             android:padding="20dp">
 
@@ -25,95 +25,42 @@
                 app:tint="@android:color/white" />
 
             <TextView
+                android:id="@+id/tvTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerHorizontal="true"
-                android:text="Đặt vé"
+                android:text="Đặt vé xe khách"
                 android:textColor="@android:color/white"
                 android:textSize="22sp"
                 android:textStyle="bold" />
 
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_alignParentEnd="true"
-                android:src="@android:drawable/ic_popup_reminder"
-                app:tint="@android:color/white" />
-
-            <!-- Tabs -->
+            <!-- Search Bar inside Header -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_alignParentBottom="true"
-                android:layout_marginBottom="40dp"
-                android:orientation="horizontal"
-                android:weightSum="3">
+                android:layout_height="50dp"
+                android:layout_below="@id/tvTitle"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="30dp"
+                android:background="@drawable/bg_search"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="15dp">
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_menu_directions"
-                        app:tint="@android:color/white" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Máy bay"
-                        android:textColor="@android:color/white"
-                        android:textStyle="bold"
-                        android:layout_marginTop="4dp"/>
-                    <View
-                        android:layout_width="40dp"
-                        android:layout_height="2dp"
-                        android:background="@android:color/white"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:src="@android:drawable/ic_menu_search"
+                    app:tint="#888" />
 
-                <LinearLayout
-                    android:layout_width="0dp"
+                <EditText
+                    android:id="@+id/etSearchTicket"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:alpha="0.7">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_menu_today"
-                        app:tint="@android:color/white" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Tàu hỏa"
-                        android:textColor="@android:color/white"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical"
-                    android:alpha="0.7">
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@android:drawable/ic_menu_mylocation"
-                        app:tint="@android:color/white" />
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Xe khách"
-                        android:textColor="@android:color/white"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
+                    android:background="@null"
+                    android:hint="Tìm kiếm tuyến đường..."
+                    android:layout_marginStart="10dp"
+                    android:textSize="14sp" />
             </LinearLayout>
+
         </RelativeLayout>
 
         <!-- Search Card -->
@@ -152,24 +99,12 @@
                                 android:text="Điểm đi"
                                 android:textSize="12sp"
                                 android:textColor="#999"/>
-                            <LinearLayout
-                                android:layout_width="wrap_content"
+                            <Spinner
+                                android:id="@+id/spinnerDeparture"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:layout_marginTop="4dp">
-                                <ImageView
-                                    android:layout_width="16dp"
-                                    android:layout_height="16dp"
-                                    android:src="@android:drawable/ic_menu_mylocation"
-                                    app:tint="#007BFF"/>
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="Hà Nội (HAN)"
-                                    android:textColor="#333"
-                                    android:textStyle="bold"
-                                    android:layout_marginStart="8dp"/>
-                            </LinearLayout>
+                                android:layout_marginTop="4dp"
+                                android:background="@null" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -184,28 +119,17 @@
                                 android:text="Điểm đến"
                                 android:textSize="12sp"
                                 android:textColor="#999"/>
-                            <LinearLayout
-                                android:layout_width="wrap_content"
+                            <Spinner
+                                android:id="@+id/spinnerDestination"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:layout_marginTop="4dp">
-                                <ImageView
-                                    android:layout_width="16dp"
-                                    android:layout_height="16dp"
-                                    android:src="@android:drawable/ic_menu_mylocation"
-                                    app:tint="#FF5252"/>
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="TP. Hồ Chí Minh"
-                                    android:textColor="#333"
-                                    android:textStyle="bold"
-                                    android:layout_marginStart="8dp"/>
-                            </LinearLayout>
+                                android:layout_marginTop="4dp"
+                                android:background="@null" />
                         </LinearLayout>
                     </LinearLayout>
 
                     <ImageView
+                        android:id="@+id/ivSwapLocations"
                         android:layout_width="36dp"
                         android:layout_height="36dp"
                         android:layout_centerInParent="true"
@@ -226,38 +150,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:weightSum="2">
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Ngày đi"
-                            android:textSize="12sp"
-                            android:textColor="#999"/>
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:layout_marginTop="4dp">
-                            <ImageView
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:src="@android:drawable/ic_menu_my_calendar"
-                                app:tint="#777"/>
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="12 Th08, 2024"
-                                android:textColor="#333"
-                                android:textStyle="bold"
-                                android:layout_marginStart="8dp"/>
-                        </LinearLayout>
-                    </LinearLayout>
+                    android:weightSum="1">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -276,27 +169,38 @@
                             android:gravity="center_vertical"
                             android:layout_marginTop="4dp">
                             <ImageView
-                                android:layout_width="16dp"
-                                android:layout_height="16dp"
-                                android:src="@android:drawable/ic_menu_myplaces"
-                                app:tint="#777"/>
+                                android:id="@+id/btnMinusPassenger"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_delete"
+                                android:padding="4dp"
+                                android:background="@drawable/bg_circle_outline"/>
                             <TextView
-                                android:layout_width="wrap_content"
+                                android:id="@+id/tvPassengerCount"
+                                android:layout_width="30dp"
                                 android:layout_height="wrap_content"
-                                android:text="1 người, Phổ thông"
-                                android:textColor="#333"
+                                android:text="1"
+                                android:textColor="#FF5252"
                                 android:textStyle="bold"
-                                android:layout_marginStart="8dp"/>
+                                android:gravity="center"/>
+                            <ImageView
+                                android:id="@+id/btnPlusPassenger"
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@android:drawable/ic_input_add"
+                                android:padding="4dp"
+                                android:background="@drawable/bg_circle_outline"/>
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
 
                 <Button
+                    android:id="@+id/btnSearchTransport"
                     android:layout_width="match_parent"
                     android:layout_height="55dp"
                     android:layout_marginTop="20dp"
                     android:backgroundTint="#007BFF"
-                    android:text="Tìm kiếm chuyến bay"
+                    android:text="Tìm kiếm xe khách"
                     android:textColor="@android:color/white"
                     android:textAllCaps="false"
                     android:textSize="16sp"
@@ -305,31 +209,44 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Search Tickets -->
+        <!-- Bus Trip Results Section -->
         <LinearLayout
+            android:id="@+id/layoutBusResults"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginHorizontal="20dp"
-            android:layout_marginTop="15dp"
-            android:background="@drawable/bg_search"
-            android:gravity="center_vertical"
-            android:paddingHorizontal="15dp">
-            <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:src="@android:drawable/ic_menu_search"
-                app:tint="#888" />
-            <EditText
-                android:id="@+id/etSearchTicket"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="20dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvBusResultsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="20dp"
+                android:text="Kết quả tìm kiếm"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#333"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvBusTrips"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Tìm tuyến bay, điểm đi/đến..."
-                android:background="@null"
-                android:layout_marginStart="10dp"
-                android:textSize="14sp" />
+                android:nestedScrollingEnabled="false"
+                android:paddingVertical="8dp"/>
+
+            <TextView
+                android:id="@+id/tvNoBusResults"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="20dp"
+                android:gravity="center"
+                android:text="Không tìm thấy chuyến xe nào phù hợp"
+                android:textColor="#777"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <!-- Offers Section -->
+        <!-- Offers Section (Optional, keeping it below results) -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -342,26 +259,16 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="#333"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Xem tất cả >"
-                android:layout_alignParentEnd="true"
-                android:textColor="#007BFF"
-                android:textSize="14sp"
-                android:layout_centerVertical="true"/>
         </RelativeLayout>
 
         <TextView
             android:id="@+id/tvNoResultsTicket"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="15dp"
-            android:layout_marginTop="10dp"
+            android:padding="20dp"
             android:gravity="center"
-            android:text="Không tìm thấy"
+            android:text="Không tìm thấy ưu đãi nào"
             android:textColor="#777"
-            android:textSize="14sp"
             android:visibility="gone" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -370,58 +277,8 @@
             android:layout_height="wrap_content"
             android:paddingHorizontal="12dp"
             android:layout_marginTop="10dp"
-            android:clipToPadding="false"/>
-
-        <!-- Membership Banner -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="20dp"
-            app:cardCornerRadius="15dp"
-            app:cardBackgroundColor="#FFF3E0">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="20dp">
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_toStartOf="@id/btnRegister">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Thành viên ưu đãi"
-                        android:textColor="#BF360C"
-                        android:textSize="18sp"
-                        android:textStyle="bold"/>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Giảm thêm 5% cho mọi vé máy bay"
-                        android:textColor="#D84315"
-                        android:textSize="12sp"
-                        android:layout_marginTop="4dp"/>
-                </LinearLayout>
-
-                <Button
-                    android:id="@+id/btnRegister"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_centerVertical="true"
-                    android:backgroundTint="#FF6F00"
-                    android:text="Đăng ký ngay"
-                    android:textColor="@android:color/white"
-                    android:textSize="12sp"
-                    android:paddingHorizontal="12dp"
-                    android:textAllCaps="false"/>
-            </RelativeLayout>
-        </androidx.cardview.widget.CardView>
+            android:clipToPadding="false"
+            android:layout_marginBottom="20dp"/>
 
     </LinearLayout>
 </ScrollView>

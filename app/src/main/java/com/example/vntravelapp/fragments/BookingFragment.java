@@ -26,7 +26,6 @@ public class BookingFragment extends Fragment {
     private EditText edtName, edtPhone, edtEmail;
     private TextView tvTotal, tvTotalInline, tvPriceDetail;
     private Button btnConfirm;
-    private TextView tvSelectedDate;
 
     private String title, priceStr, location, imageUrl;
     private int imageRes;
@@ -62,6 +61,8 @@ public class BookingFragment extends Fragment {
             endDate = getArguments().getString("endDate");
             priceAdult = parsePrice(priceStr);
         }
+        // Gán ngày mặc định là ngày hiện tại vì phần chọn ngày đã bị xoá
+        selectedDateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
     }
 
     @Override
@@ -80,7 +81,6 @@ public class BookingFragment extends Fragment {
         tvTotalInline = view.findViewById(R.id.tvTotalInline);
         tvPriceDetail = view.findViewById(R.id.tvPriceDetail);
         btnConfirm    = view.findViewById(R.id.btnConfirm);
-        tvSelectedDate = view.findViewById(R.id.tvSelectedDate);
 
         TextView btnAdultMinus = view.findViewById(R.id.btnAdultMinus);
         TextView btnAdultPlus  = view.findViewById(R.id.btnAdultPlus);
@@ -110,8 +110,6 @@ public class BookingFragment extends Fragment {
         ivBack.setOnClickListener(v -> {
             if (getActivity() != null) getActivity().getSupportFragmentManager().popBackStack();
         });
-        
-        tvSelectedDate.setOnClickListener(v -> showDatePicker());
 
         btnAdultMinus.setOnClickListener(v -> { if (countAdult > 0) { countAdult--; edtAdult.setText(String.valueOf(countAdult)); calculatePrice(); } });
         btnAdultPlus.setOnClickListener(v -> { countAdult++; edtAdult.setText(String.valueOf(countAdult)); calculatePrice(); });
@@ -122,36 +120,6 @@ public class BookingFragment extends Fragment {
         btnConfirm.setOnClickListener(v -> handleBooking());
 
         return view;
-    }
-
-    private void showDatePicker() {
-        final java.util.Calendar c = java.util.Calendar.getInstance();
-        android.app.DatePickerDialog dpd = new android.app.DatePickerDialog(requireContext(),
-                (view, y, m, d) -> {
-                    selectedDateStr = String.format(Locale.getDefault(), "%d-%02d-%02d", y, m + 1, d);
-                    tvSelectedDate.setText(String.format(Locale.getDefault(), "%02d/%02d/%d", d, m + 1, y));
-                }, c.get(java.util.Calendar.YEAR), c.get(java.util.Calendar.MONTH), c.get(java.util.Calendar.DAY_OF_MONTH));
-
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            long minLimit = System.currentTimeMillis();
-
-            // Ràng buộc theo startDate của Tour
-            if (startDate != null && !startDate.trim().isEmpty()) {
-                Date sDate = sdf.parse(startDate.trim());
-                if (sDate != null && sDate.getTime() > minLimit) minLimit = sDate.getTime();
-            }
-            dpd.getDatePicker().setMinDate(minLimit);
-
-            // Ràng buộc theo endDate của Tour
-            if (endDate != null && !endDate.trim().isEmpty()) {
-                Date eDate = sdf.parse(endDate.trim());
-                if (eDate != null) dpd.getDatePicker().setMaxDate(eDate.getTime());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        dpd.show();
     }
 
     private void calculatePrice() {
@@ -170,10 +138,6 @@ public class BookingFragment extends Fragment {
         String phone = edtPhone.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
 
-        if (selectedDateStr.isEmpty()) {
-            Toast.makeText(getContext(), "Vui lòng chọn ngày khởi hành!", Toast.LENGTH_SHORT).show();
-            return;
-        }
         if (name.isEmpty() || phone.isEmpty() || countAdult == 0) {
             Toast.makeText(getContext(), "Vui lòng nhập đủ thông tin và ít nhất 1 người lớn!", Toast.LENGTH_SHORT).show();
             return;
