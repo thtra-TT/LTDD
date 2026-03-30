@@ -97,6 +97,34 @@
             android:paddingHorizontal="5dp"
             android:clipToPadding="false"/>
 
+        <!-- Near You Section -->
+        <RelativeLayout
+            android:id="@+id/rlNearYouHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="15dp"
+            android:layout_marginTop="25dp"
+            android:visibility="gone">
+            <TextView
+                android:id="@+id/tvNearYouTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📍 Địa điểm gần bạn"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#333"/>
+        </RelativeLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvNearYou"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            android:paddingHorizontal="5dp"
+            android:clipToPadding="false"
+            android:visibility="gone"/>
+
         <!-- All Tours Section -->
         <RelativeLayout
             android:layout_width="match_parent"

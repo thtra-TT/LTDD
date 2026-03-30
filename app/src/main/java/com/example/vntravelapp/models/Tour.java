@@ -29,6 +29,7 @@ public class Tour {
     private double longitude;
     private String startDate; // format: yyyy-MM-dd
     private String endDate;   // format: yyyy-MM-dd
+    private String type = "Tour"; // "Tour" or "Destination"
 
     public Tour(String title, String location, String duration, String price,
                 String description, String itinerary, String included, String excluded,
@@ -90,6 +91,9 @@ public class Tour {
     public double getLongitude() { return longitude; }
     public String getStartDate() { return startDate; }
     public String getEndDate() { return endDate; }
+    
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
 
     private static Date parseYmd(String value) {
         if (value == null || value.trim().isEmpty()) return null;

@@ -1,5 +1,8 @@
 package com.example.vntravelapp.fragments;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.location.Location;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,55 +10,62 @@ import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.vntravelapp.R;
-import com.example.vntravelapp.adapters.HomeSearchAdapter;
 import com.example.vntravelapp.adapters.TourAdapter;
 import com.example.vntravelapp.database.DatabaseHelper;
 import com.example.vntravelapp.models.Hotel;
 import com.example.vntravelapp.models.Tour;
-import com.example.vntravelapp.utils.SearchUtils;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class HomeFragment extends Fragment {
 
     private DatabaseHelper dbHelper;
     private TourAdapter tourAdapter;
     private TourAdapter popularAdapter;
-    private HomeSearchAdapter searchAdapter;
+    private TourAdapter nearYouAdapter;
     private List<Tour> allTours = new ArrayList<>();
     private List<Tour> popularTours = new ArrayList<>();
-    private List<Hotel> allHotels = new ArrayList<>();
-    private List<SearchIndexItem> searchIndex = new ArrayList<>();
-    private List<LocationIndexItem> locationIndex = new ArrayList<>();
+    private List<Tour> nearYouTours = new ArrayList<>();
+    private List<Tour> allDestinations = new ArrayList<>();
     
     private TextView tvNoResults;
-    private TextView tvFeaturedTitle;
+    private TextView tvNearYouTitle;
     private RecyclerView rvResults;
     private RecyclerView rvPopular;
-    private View rlPopularHeader;
-    private boolean isSearching = false;
+    private RecyclerView rvNearYou;
+    private View rlNearYouHeader;
+
+    private FusedLocationProviderClient fusedLocationClient;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1001;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
         dbHelper = new DatabaseHelper(getContext());
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(requireActivity());
 
         // UI References
         tvNoResults = view.findViewById(R.id.tvNoResults);
-        tvFeaturedTitle = view.findViewById(R.id.tvFeaturedTitle);
+        tvNearYouTitle = view.findViewById(R.id.tvNearYouTitle);
         rvResults = view.findViewById(R.id.rvTours);
         rvPopular = view.findViewById(R.id.rvPopularTours);
-        rlPopularHeader = view.findViewById(R.id.rlPopularHeader);
+        rvNearYou = view.findViewById(R.id.rvNearYou);
+        rlNearYouHeader = view.findViewById(R.id.rlNearYouHeader);
 
         // Setup Categories
         setupCategory(view.findViewById(R.id.catTour), "Tour", android.R.drawable.ic_menu_directions);
@@ -69,26 +79,22 @@ public class HomeFragment extends Fragment {
         view.findViewById(R.id.catCombo).setOnClickListener(v -> switchFragment(new ComboFragment()));
 
         // Data Loading
-        allTours = dbHelper.getAllTours(); // Now sorted by bookCount and rating
+        allTours = dbHelper.getAllTours(); // Chỉ lấy type = 'Tour'
         popularTours = dbHelper.getPopularTours();
-        allHotels = dbHelper.getAllHotels();
-        buildSearchIndex(allTours, allHotels);
+        allDestinations = dbHelper.getAllDestinations(); // Lấy type = 'Destination' (TP.HCM)
 
         // Setup Main RecyclerView (All Tours)
         rvResults.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvResults.setHasFixedSize(false);
         rvResults.setNestedScrollingEnabled(false);
         tourAdapter = new TourAdapter(new ArrayList<>(allTours));
         rvResults.setAdapter(tourAdapter);
 
-        // Setup Popular RecyclerView (Horizontal)
-        LinearLayoutManager popularLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false);
-        rvPopular.setLayoutManager(popularLayoutManager);
+        // Setup Popular RecyclerView
+        rvPopular.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         popularAdapter = new TourAdapter(new ArrayList<>(popularTours)) {
             @Override
             public void onBindViewHolder(@NonNull TourViewHolder holder, int position) {
                 super.onBindViewHolder(holder, position);
-                // Adjust width for horizontal items
                 ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
                 lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.8);
                 holder.itemView.setLayoutParams(lp);
@@ -96,12 +102,122 @@ public class HomeFragment extends Fragment {
         };
         rvPopular.setAdapter(popularAdapter);
 
-        searchAdapter = new HomeSearchAdapter();
+        // Setup Near You RecyclerView
+        rvNearYou.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        nearYouAdapter = new TourAdapter(new ArrayList<>(nearYouTours)) {
+            @Override
+            public void onBindViewHolder(@NonNull TourViewHolder holder, int position) {
+                super.onBindViewHolder(holder, position);
+                ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
+                lp.width = (int) (getResources().getDisplayMetrics().widthPixels * 0.8);
+                holder.itemView.setLayoutParams(lp);
+            }
+        };
+        rvNearYou.setAdapter(nearYouAdapter);
 
         EditText etSearch = view.findViewById(R.id.etSearchHome);
         etSearch.setOnClickListener(v -> switchFragment(new SearchFragment()));
 
+        checkLocationPermissionAndFetch();
+
         return view;
+    }
+
+    private void checkLocationPermissionAndFetch() {
+        if (ActivityCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION_REQUEST_CODE);
+        } else {
+            getLastLocation();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                getLastLocation();
+            } else {
+                // Nếu từ chối quyền, vẫn hiển thị các điểm tại TP.HCM mặc định
+                getLastLocation();
+            }
+        }
+    }
+
+    private void getLastLocation() {
+        try {
+            fusedLocationClient.getLastLocation().addOnSuccessListener(requireActivity(), location -> {
+                Location refLocation = location;
+                if (refLocation == null) {
+                    refLocation = new Location("default");
+                    refLocation.setLatitude(10.7769);
+                    refLocation.setLongitude(106.7009);
+                }
+                updateNearYouTours(refLocation);
+            }).addOnFailureListener(e -> {
+                Location defaultLocation = new Location("default");
+                defaultLocation.setLatitude(10.7769);
+                defaultLocation.setLongitude(106.7009);
+                updateNearYouTours(defaultLocation);
+            });
+        } catch (SecurityException e) {
+            Location defaultLocation = new Location("default");
+            defaultLocation.setLatitude(10.7769);
+            defaultLocation.setLongitude(106.7009);
+            updateNearYouTours(defaultLocation);
+        }
+    }
+
+    private void updateNearYouTours(Location userLocation) {
+        List<Tour> nearbyDestinations = new ArrayList<>();
+        boolean isTrulyNear = false;
+        
+        // Duyệt qua danh sách Destinations
+        for (Tour dest : allDestinations) {
+            if (dest.getLatitude() == 0 && dest.getLongitude() == 0) continue;
+            
+            float[] results = new float[1];
+            Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(), 
+                                   dest.getLatitude(), dest.getLongitude(), results);
+            
+            // 500km để được coi là "gần bạn"
+            if (results[0] <= 500000) {
+                nearbyDestinations.add(dest);
+                isTrulyNear = true;
+            }
+        }
+
+        // Nếu không có địa điểm nào trong bán kính 500km, hiển thị tất cả destinations có sẵn (fallback)
+        if (nearbyDestinations.isEmpty() && !allDestinations.isEmpty()) {
+            nearbyDestinations.addAll(allDestinations);
+            isTrulyNear = false;
+        }
+
+        // Sắp xếp theo khoảng cách
+        Collections.sort(nearbyDestinations, (t1, t2) -> {
+            float[] d1 = new float[1];
+            Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(), t1.getLatitude(), t1.getLongitude(), d1);
+            float[] d2 = new float[1];
+            Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(), t2.getLatitude(), t2.getLongitude(), d2);
+            return Float.compare(d1[0], d2[0]);
+        });
+
+        nearYouTours = nearbyDestinations;
+
+        if (!nearYouTours.isEmpty()) {
+            rlNearYouHeader.setVisibility(View.VISIBLE);
+            rvNearYou.setVisibility(View.VISIBLE);
+            nearYouAdapter.updateData(nearYouTours);
+            if (tvNearYouTitle != null) {
+                if (isTrulyNear) {
+                    tvNearYouTitle.setText("📍 Điểm du lịch gần bạn gần bạn");
+                } else {
+                    tvNearYouTitle.setText("📍 Điểm du lịch gần bạn gần bạn");
+                }
+            }
+        } else {
+            rlNearYouHeader.setVisibility(View.GONE);
+            rvNearYou.setVisibility(View.GONE);
+        }
     }
 
     private void switchFragment(Fragment fragment) {
@@ -118,84 +234,5 @@ public class HomeFragment extends Fragment {
         ImageView iv = view.findViewById(R.id.ivCategoryIcon);
         tv.setText(name);
         iv.setImageResource(iconRes);
-    }
-
-    private void buildSearchIndex(List<Tour> tours, List<Hotel> hotels) {
-        searchIndex.clear();
-        Map<String, String> locations = new LinkedHashMap<>();
-
-        for (Tour tour : tours) {
-            String title = tour.getTitle() == null ? "" : tour.getTitle();
-            String location = tour.getLocation() == null ? "" : tour.getLocation();
-            searchIndex.add(new SearchIndexItem(
-                SearchIndexType.TOUR,
-                tour,
-                null,
-                SearchUtils.normalize(title),
-                SearchUtils.normalize(location)
-            ));
-            addLocation(locations, location);
-        }
-
-        for (Hotel hotel : hotels) {
-            String title = hotel.getName() == null ? "" : hotel.getName();
-            String location = hotel.getLocation() == null ? "" : hotel.getLocation();
-            searchIndex.add(new SearchIndexItem(
-                SearchIndexType.HOTEL,
-                null,
-                hotel,
-                SearchUtils.normalize(title),
-                SearchUtils.normalize(location)
-            ));
-            addLocation(locations, location);
-        }
-
-        locationIndex = new ArrayList<>();
-        for (Map.Entry<String, String> entry : locations.entrySet()) {
-            if (!entry.getKey().isEmpty()) {
-                locationIndex.add(new LocationIndexItem(entry.getValue(), entry.getKey()));
-            }
-        }
-    }
-
-    private void addLocation(Map<String, String> locations, String display) {
-        if (display == null || display.trim().isEmpty()) {
-            return;
-        }
-        String normalized = SearchUtils.normalize(display);
-        if (!normalized.isEmpty() && !locations.containsKey(normalized)) {
-            locations.put(normalized, display.trim());
-        }
-    }
-
-    private enum SearchIndexType {
-        TOUR,
-        HOTEL
-    }
-
-    private static class SearchIndexItem {
-        final SearchIndexType type;
-        final Tour tour;
-        final Hotel hotel;
-        final String titleNormalized;
-        final String locationNormalized;
-
-        SearchIndexItem(SearchIndexType type, Tour tour, Hotel hotel, String titleNormalized, String locationNormalized) {
-            this.type = type;
-            this.tour = tour;
-            this.hotel = hotel;
-            this.titleNormalized = titleNormalized;
-            this.locationNormalized = locationNormalized;
-        }
-    }
-
-    private static class LocationIndexItem {
-        final String display;
-        final String normalized;
-
-        LocationIndexItem(String display, String normalized) {
-            this.display = display;
-            this.normalized = normalized;
-        }
     }
 }
