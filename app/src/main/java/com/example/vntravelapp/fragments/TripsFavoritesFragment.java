@@ -73,28 +73,12 @@ public class TripsFavoritesFragment extends Fragment {
 
     private void openFavoriteDetail(FavoriteItem item) {
         if ("Hotel".equals(item.getItemType())) {
-            Hotel hotel = db.getHotelByTitle(item.getTitle());
+            Hotel hotel = db.getHotelById(item.getItemId());
             if (hotel == null) {
                 Toast.makeText(getContext(), "Không tìm thấy chi tiết khách sạn", Toast.LENGTH_SHORT).show();
                 return;
             }
-            DetailFragment fragment = DetailFragment.newInstance(
-                    hotel.getName(),
-                    hotel.getLocation(),
-                    hotel.getPrice(),
-                    hotel.getDescription(),
-                    "",
-                    "",
-                    "",
-                    hotel.getImageRes(),
-                    hotel.getImageUrl(),
-                    new ArrayList<>(),
-                    null,
-                    hotel.getRating(),
-                    hotel.getReviewCount(),
-                    null,
-                    null
-            );
+            DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_HOTEL, hotel.getId());
             requireActivity().getSupportFragmentManager()
                     .beginTransaction()
                     .replace(R.id.fragment_container, fragment)
@@ -103,28 +87,12 @@ public class TripsFavoritesFragment extends Fragment {
             return;
         }
 
-        Tour tour = db.getTourByTitle(item.getTitle());
+        Tour tour = db.getTourById(item.getItemId());
         if (tour == null) {
             Toast.makeText(getContext(), "Không tìm thấy chi tiết tour", Toast.LENGTH_SHORT).show();
             return;
         }
-        DetailFragment fragment = DetailFragment.newInstance(
-                tour.getTitle(),
-                tour.getLocation(),
-                tour.getPrice(),
-                tour.getDescription(),
-                tour.getItinerary(),
-                tour.getIncluded(),
-                tour.getExcluded(),
-                tour.getImageResId(),
-                tour.getPrimaryImageUrl(),
-                new ArrayList<>(tour.getImageUrls()),
-                tour.getVideoUrl(),
-                tour.getRating(),
-                tour.getReviewCount(),
-                tour.getStartDate(),
-                tour.getEndDate()
-        );
+        DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_TOUR, tour.getId());
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)

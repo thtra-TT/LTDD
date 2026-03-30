@@ -1,6 +1,8 @@
 package com.example.vntravelapp.fragments;
 
+import android.app.DatePickerDialog;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,10 +13,9 @@ import androidx.fragment.app.Fragment;
 import com.bumptech.glide.Glide;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.database.DatabaseHelper;
-import com.example.vntravelapp.models.Tour;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
 import java.util.Locale;
 
 public class BookingFragment extends Fragment {
@@ -22,15 +23,15 @@ public class BookingFragment extends Fragment {
     private int countAdult = 0;
     private int countChild = 0;
 
-    private TextView edtAdult, edtChild;
+    private TextView edtAdult, edtChild, tvSelectedDate;
     private EditText edtName, edtPhone, edtEmail;
-    private TextView tvTotal, tvTotalInline, tvPriceDetail;
+    private TextView tvTotal, tvPriceDetail;
     private Button btnConfirm;
+    private LinearLayout layoutSelectDate;
 
     private String title, priceStr, location, imageUrl;
     private int imageRes;
     private double priceAdult;
-    private String startDate, endDate;
     private String selectedDateStr = "";
 
     public static BookingFragment newInstance(String title, String price, String location,
@@ -42,8 +43,6 @@ public class BookingFragment extends Fragment {
         args.putString("location", location);
         args.putString("imageUrl", imageUrl);
         args.putInt("imageRes", imageRes);
-        args.putString("startDate", startDate);
-        args.putString("endDate", endDate);
         f.setArguments(args);
         return f;
     }
@@ -57,12 +56,8 @@ public class BookingFragment extends Fragment {
             location = getArguments().getString("location");
             imageUrl = getArguments().getString("imageUrl");
             imageRes = getArguments().getInt("imageRes", 0);
-            startDate = getArguments().getString("startDate");
-            endDate = getArguments().getString("endDate");
             priceAdult = parsePrice(priceStr);
         }
-        // Gán ngày mặc định là ngày hiện tại vì phần chọn ngày đã bị xoá
-        selectedDateStr = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
     }
 
     @Override
@@ -72,13 +67,14 @@ public class BookingFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_booking, container, false);
 
         // Ánh xạ View
+        tvSelectedDate = view.findViewById(R.id.tvSelectedDate);
+        layoutSelectDate = view.findViewById(R.id.layoutSelectDate);
         edtAdult      = view.findViewById(R.id.edtAdult);
         edtChild      = view.findViewById(R.id.edtChild);
         edtName       = view.findViewById(R.id.edtName);
         edtPhone      = view.findViewById(R.id.edtPhone);
         edtEmail      = view.findViewById(R.id.edtEmail);
         tvTotal       = view.findViewById(R.id.tvTotal);
-        tvTotalInline = view.findViewById(R.id.tvTotalInline);
         tvPriceDetail = view.findViewById(R.id.tvPriceDetail);
         btnConfirm    = view.findViewById(R.id.btnConfirm);
 
@@ -94,7 +90,7 @@ public class BookingFragment extends Fragment {
         TextView  tvBLocation = view.findViewById(R.id.tvBookingLocation);
         TextView  tvBPrice    = view.findViewById(R.id.tvBookingPrice);
 
-        // Hiển thị dữ liệu
+        // Hiển thị dữ liệu cơ bản
         tvBTitle.setText(title);
         tvBTitleCard.setText(title);
         tvBLocation.setText("📍 " + location);
@@ -106,11 +102,15 @@ public class BookingFragment extends Fragment {
             ivImage.setImageResource(imageRes);
         }
 
-        // Sự kiện Click
+        // 🔙 Quay lại
         ivBack.setOnClickListener(v -> {
             if (getActivity() != null) getActivity().getSupportFragmentManager().popBackStack();
         });
 
+        // 📅 Xử lý chọn ngày
+        layoutSelectDate.setOnClickListener(v -> showDatePicker());
+
+        // 👥 Xử lý tăng giảm số lượng
         btnAdultMinus.setOnClickListener(v -> { if (countAdult > 0) { countAdult--; edtAdult.setText(String.valueOf(countAdult)); calculatePrice(); } });
         btnAdultPlus.setOnClickListener(v -> { countAdult++; edtAdult.setText(String.valueOf(countAdult)); calculatePrice(); });
         btnChildMinus.setOnClickListener(v -> { if (countChild > 0) { countChild--; edtChild.setText(String.valueOf(countChild)); calculatePrice(); } });
@@ -122,12 +122,29 @@ public class BookingFragment extends Fragment {
         return view;
     }
 
+    private void showDatePicker() {
+        final Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(requireContext(),
+                (view, year1, monthOfYear, dayOfMonth) -> {
+                    selectedDateStr = dayOfMonth + "/" + (monthOfYear + 1) + "/" + year1;
+                    tvSelectedDate.setText(selectedDateStr);
+                    tvSelectedDate.setTextColor(getResources().getColor(android.R.color.black));
+                }, year, month, day);
+        
+        // Không cho chọn ngày trong quá khứ
+        datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
+        datePickerDialog.show();
+    }
+
     private void calculatePrice() {
         double childPrice = priceAdult * 0.7;
         double total = (countAdult * priceAdult) + (countChild * childPrice);
         tvPriceDetail.setText("Người lớn (" + countAdult + " x " + format(priceAdult) + ")\nTrẻ em (" + countChild + " x " + format(childPrice) + ")");
         tvTotal.setText(format(total));
-        tvTotalInline.setText(format(total));
     }
 
     private String format(double p) { return String.format("%,.0fđ", p); }
@@ -138,8 +155,29 @@ public class BookingFragment extends Fragment {
         String phone = edtPhone.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
 
-        if (name.isEmpty() || phone.isEmpty() || countAdult == 0) {
-            Toast.makeText(getContext(), "Vui lòng nhập đủ thông tin và ít nhất 1 người lớn!", Toast.LENGTH_SHORT).show();
+        // 1. Kiểm tra ngày đi
+        if (selectedDateStr.isEmpty()) {
+            Toast.makeText(getContext(), "Vui lòng chọn ngày khởi hành!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 2. Kiểm tra các trường trống
+        if (name.isEmpty() || phone.isEmpty() || email.isEmpty() || countAdult == 0) {
+            Toast.makeText(getContext(), "Vui lòng nhập đầy đủ thông tin và ít nhất 1 người lớn!", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 3. Bắt lỗi Số điện thoại (10 số, bắt đầu bằng 0)
+        if (!phone.matches("^0\\d{9}$")) {
+            edtPhone.setError("Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)");
+            edtPhone.requestFocus();
+            return;
+        }
+
+        // 4. Bắt lỗi Email
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            edtEmail.setError("Email không đúng định dạng");
+            edtEmail.requestFocus();
             return;
         }
 
@@ -148,6 +186,7 @@ public class BookingFragment extends Fragment {
 
         if (success) {
             Toast.makeText(getContext(), "Đặt tour thành công!", Toast.LENGTH_SHORT).show();
+            // Chuyển sang màn hình chuyến đi của tôi
             if (getActivity() != null) {
                 requireActivity().getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment_container, new TripFragment())

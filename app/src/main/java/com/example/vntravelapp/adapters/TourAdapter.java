@@ -59,7 +59,7 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
         holder.tvPrice.setText(tour.getPrice());
         holder.tvRating.setText(String.format(Locale.getDefault(), "⭐ %.1f", tour.getRating()));
         holder.tvReviews.setText(String.format(Locale.getDefault(), "(%d đánh giá)", tour.getReviewCount()));
-        
+
         // Hiển thị số lượt đặt
         int books = tour.getBookCount();
         if (books >= 1000) {
@@ -75,7 +75,7 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
             holder.tvTourStatus.setVisibility(View.VISIBLE);
             holder.tvTourStatus.setText(tour.getStatusMessage());
             holder.itemView.setAlpha(0.7f);
-            
+
             // Áp dụng hiệu ứng màu xám cho ảnh
             ColorMatrix matrix = new ColorMatrix();
             matrix.setSaturation(0);
@@ -162,16 +162,7 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
             v.animate().scaleX(0.95f).scaleY(0.95f).setDuration(100).withEndAction(() -> {
                 v.animate().scaleX(1.0f).scaleY(1.0f).setDuration(100);
                 AppCompatActivity activity = (AppCompatActivity) v.getContext();
-                DetailFragment fragment = DetailFragment.newInstance(
-                        tour.getTitle(), tour.getLocation(), tour.getPrice(),
-                        tour.getDescription(), tour.getItinerary(),
-                        tour.getIncluded(), tour.getExcluded(),
-                        tour.getImageResId(), primaryImageUrl,
-                        new ArrayList<>(tour.getImageUrls()),
-                        tour.getVideoUrl(),
-                        tour.getRating(), tour.getReviewCount(),
-                        tour.getStartDate(), tour.getEndDate()
-                );
+                DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_TOUR, tour.getId());
                 activity.getSupportFragmentManager().beginTransaction()
                         .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out, android.R.anim.slide_in_left, android.R.anim.slide_out_right)
                         .replace(R.id.fragment_container, fragment)

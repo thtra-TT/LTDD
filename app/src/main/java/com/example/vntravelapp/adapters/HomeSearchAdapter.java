@@ -225,36 +225,20 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
             if (primaryImageUrl != null && !primaryImageUrl.isEmpty()) {
                 Glide.with(itemView.getContext())
-                    .load(primaryImageUrl)
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .into(ivTourImage);
+                        .load(primaryImageUrl)
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .into(ivTourImage);
             } else if (tour.getImageResId() != 0) {
                 ivTourImage.setImageResource(tour.getImageResId());
             }
 
             itemView.setOnClickListener(v -> {
                 AppCompatActivity activity = (AppCompatActivity) v.getContext();
-                DetailFragment fragment = DetailFragment.newInstance(
-                        tour.getTitle(),
-                        tour.getLocation(),
-                        tour.getPrice(),
-                        tour.getDescription(),
-                        tour.getItinerary(),
-                        tour.getIncluded(),
-                        tour.getExcluded(),
-                        tour.getImageResId(),
-                        primaryImageUrl,
-                        new ArrayList<>(tour.getImageUrls()),
-                        tour.getVideoUrl(),
-                        tour.getRating(),
-                        tour.getReviewCount(),
-                        tour.getStartDate(),
-                        tour.getEndDate()
-                );
+                DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_TOUR, tour.getId());
                 activity.getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .addToBackStack(null)
-                    .commit();
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
             });
         }
     }
@@ -285,36 +269,20 @@ public class HomeSearchAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
 
             if (hotel.getImageUrl() != null && !hotel.getImageUrl().isEmpty()) {
                 Glide.with(itemView.getContext())
-                    .load(hotel.getImageUrl())
-                    .placeholder(android.R.drawable.ic_menu_gallery)
-                    .into(ivHotel);
+                        .load(hotel.getImageUrl())
+                        .placeholder(android.R.drawable.ic_menu_gallery)
+                        .into(ivHotel);
             } else {
                 ivHotel.setImageResource(hotel.getImageRes());
             }
 
             itemView.setOnClickListener(v -> {
                 AppCompatActivity activity = (AppCompatActivity) v.getContext();
-                DetailFragment fragment = DetailFragment.newInstance(
-                        hotel.getName(),
-                        hotel.getLocation(),
-                        hotel.getPrice(),
-                        hotel.getDescription(),
-                        "", // itinerary
-                        "", // included
-                        "", // excluded
-                        hotel.getImageRes(),
-                        hotel.getImageUrl(),
-                        new ArrayList<>(),
-                        null,
-                        hotel.getRating(),
-                        hotel.getReviewCount(),
-                        null,
-                        null
-                );
+                DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_HOTEL, hotel.getId());
                 activity.getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, fragment)
-                    .addToBackStack(null)
-                    .commit();
+                        .replace(R.id.fragment_container, fragment)
+                        .addToBackStack(null)
+                        .commit();
             });
         }
     }

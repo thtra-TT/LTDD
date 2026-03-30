@@ -41,59 +41,73 @@ public class RegisterActivity extends AppCompatActivity {
         edtConfirmPassword = findViewById(R.id.edtConfirmPassword);
         cbPolicy = findViewById(R.id.cbPolicy);
         btnRegister = findViewById(R.id.btnRegister);
-        tvLogin = findViewById(R.id.tvLogin);   // FIX đúng ID
-        ivBack = findViewById(R.id.ivBack);     // FIX đúng ID
+        tvLogin = findViewById(R.id.tvLogin);
+        ivBack = findViewById(R.id.ivBack);
     }
 
     private void performRegistration() {
         String fullName = edtFullName.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
-        String phone = edtPhone.getText().toString().trim();
-        String pass = edtPassword.getText().toString();
-        String confirmPass = edtConfirmPassword.getText().toString();
+        // Loại bỏ khoảng trắng trong số điện thoại nếu có
+        String phone = edtPhone.getText().toString().trim().replace(" ", "");
+        String pass = edtPassword.getText().toString().trim();
+        String confirmPass = edtConfirmPassword.getText().toString().trim();
 
-        // 🔴 Validate
-        if (fullName.isEmpty() || email.isEmpty() || pass.isEmpty() || phone.isEmpty()) {
-            Toast.makeText(this, "Vui lòng nhập đầy đủ các trường", Toast.LENGTH_SHORT).show();
+        // 1. Kiểm tra trống
+        if (fullName.isEmpty() || email.isEmpty() || phone.isEmpty() || pass.isEmpty()) {
+            Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
             return;
         }
 
+        // 2. Kiểm tra định dạng Email
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             edtEmail.setError("Email không hợp lệ");
             edtEmail.requestFocus();
             return;
         }
 
+        // 3. Kiểm tra Số điện thoại (Định dạng Việt Nam: 10 số, bắt đầu bằng 0)
+        if (!phone.matches("^0\\d{9}$")) {
+            edtPhone.setError("Số điện thoại phải có 10 số và bắt đầu bằng số 0");
+            edtPhone.requestFocus();
+            return;
+        }
+
+        // 4. Kiểm tra độ dài mật khẩu (Cập nhật về 6 theo yêu cầu)
         if (pass.length() < 6) {
-            edtPassword.setError("Mật khẩu tối thiểu 6 ký tự");
+            edtPassword.setError("Mật khẩu phải từ 6 ký tự trở lên");
+            edtPassword.requestFocus();
             return;
         }
 
+        // 5. Kiểm tra mật khẩu khớp nhau
         if (!pass.equals(confirmPass)) {
-            edtConfirmPassword.setError("Mật khẩu không khớp");
+            edtConfirmPassword.setError("Mật khẩu xác nhận không khớp");
+            edtConfirmPassword.requestFocus();
             return;
         }
 
+        // 6. Kiểm tra đồng ý điều khoản
         if (!cbPolicy.isChecked()) {
-            Toast.makeText(this, "Bạn phải đồng ý với điều khoản", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Vui lòng đồng ý với điều khoản sử dụng", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 🔍 Check email tồn tại
+        // 7. Kiểm tra Email đã tồn tại chưa
         if (dbHelper.checkEmailExists(email)) {
-            edtEmail.setError("Email đã tồn tại");
+            edtEmail.setError("Email này đã được đăng ký!");
             edtEmail.requestFocus();
             return;
         }
 
-        // 💾 Insert DB
+        // 8. Thực hiện lưu vào Database
         boolean success = dbHelper.registerUser(email, pass, fullName, phone);
 
         if (success) {
-            Toast.makeText(this, "Đăng ký thành công!", Toast.LENGTH_SHORT).show();
-            finish(); // quay về login
+            Toast.makeText(this, "Chúc mừng! Bạn đã đăng ký thành công", Toast.LENGTH_LONG).show();
+            finish(); 
         } else {
-            Toast.makeText(this, "Đăng ký thất bại", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Lỗi hệ thống! Vui lòng thử lại sau", Toast.LENGTH_SHORT).show();
         }
     }
 }

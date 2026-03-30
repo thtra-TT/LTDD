@@ -97,7 +97,7 @@
                 android:id="@+id/edtPassword"
                 android:layout_width="match_parent"
                 android:layout_height="50dp"
-                android:hint="Tối thiểu 8 ký tự"
+                android:hint="Tối thiểu 6 ký tự"
                 android:inputType="textPassword"
                 android:background="@drawable/bg_edittext"
                 android:paddingLeft="15dp"/>

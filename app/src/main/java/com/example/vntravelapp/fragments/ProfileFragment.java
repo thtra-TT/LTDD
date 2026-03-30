@@ -264,23 +264,7 @@ public class ProfileFragment extends Fragment {
     }
 
     private void openTourDetail(Tour tour) {
-        DetailFragment fragment = DetailFragment.newInstance(
-                tour.getTitle(),
-                tour.getLocation(),
-                tour.getPrice(),
-                tour.getDescription(),
-                tour.getItinerary(),
-                tour.getIncluded(),
-                tour.getExcluded(),
-                tour.getImageResId(),
-                tour.getPrimaryImageUrl(),
-                new ArrayList<>(tour.getImageUrls()),
-                tour.getVideoUrl(),
-                tour.getRating(),
-                tour.getReviewCount(),
-                tour.getStartDate(),
-                tour.getEndDate()
-        );
+        DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_TOUR, tour.getId());
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)

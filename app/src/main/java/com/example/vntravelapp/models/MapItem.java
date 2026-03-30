@@ -39,8 +39,7 @@ public class MapItem {
     }
 
     public static MapItem fromTour(Tour tour) {
-        String id = "tour:" + stablePart(tour.getTitle()) + ":" + stablePart(tour.getLocation())
-                + ":" + tour.getLatitude() + ":" + tour.getLongitude();
+        String id = "tour:" + tour.getId();
         return new MapItem(
                 id,
                 Kind.TOUR,
@@ -59,8 +58,7 @@ public class MapItem {
     }
 
     public static MapItem fromHotel(Hotel hotel) {
-        String id = "hotel:" + stablePart(hotel.getName()) + ":" + stablePart(hotel.getLocation())
-                + ":" + hotel.getLatitude() + ":" + hotel.getLongitude();
+        String id = "hotel:" + hotel.getId();
         return new MapItem(
                 id,
                 Kind.HOTEL,
@@ -78,9 +76,6 @@ public class MapItem {
         );
     }
 
-    private static String stablePart(String value) {
-        return value == null ? "" : value.trim().toLowerCase();
-    }
 
     public String getId() { return id; }
     public Kind getKind() { return kind; }

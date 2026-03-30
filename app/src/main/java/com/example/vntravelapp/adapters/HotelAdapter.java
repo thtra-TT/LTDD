@@ -61,23 +61,7 @@ public class HotelAdapter extends RecyclerView.Adapter<HotelAdapter.HotelViewHol
 
         holder.itemView.setOnClickListener(v -> {
             AppCompatActivity activity = (AppCompatActivity) v.getContext();
-            DetailFragment fragment = DetailFragment.newInstance(
-                    hotel.getName(),
-                    hotel.getLocation(),
-                    hotel.getPrice(),
-                    hotel.getDescription(),
-                    "", 
-                    "", 
-                    "", 
-                    hotel.getImageRes(),
-                    hotel.getImageUrl(),
-                    new ArrayList<>(),
-                    null,
-                    hotel.getRating(),
-                    hotel.getReviewCount(),
-                    null,
-                    null
-            );
+            DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_HOTEL, hotel.getId());
             activity.getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_container, fragment)
                     .addToBackStack(null)

@@ -1,6 +1,7 @@
 package com.example.vntravelapp.models;
 
 public class Hotel {
+    private int id;
     private String name;
     private String location;
     private String description;
@@ -52,6 +53,8 @@ public class Hotel {
         this.longitude = longitude;
     }
 
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
     public String getName() { return name; }
     public String getLocation() { return location; }
     public String getDescription() { return description; }

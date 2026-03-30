@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class Tour {
+    private int id;
     private String title;
     private String location;
     private String duration;
@@ -65,6 +66,8 @@ public class Tour {
         this.endDate = endDate;
     }
 
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
     public String getTitle() { return title; }
     public String getLocation() { return location; }
     public String getDuration() { return duration; }
@@ -91,7 +94,7 @@ public class Tour {
     public double getLongitude() { return longitude; }
     public String getStartDate() { return startDate; }
     public String getEndDate() { return endDate; }
-    
+
     public String getType() { return type; }
     public void setType(String type) { this.type = type; }
 

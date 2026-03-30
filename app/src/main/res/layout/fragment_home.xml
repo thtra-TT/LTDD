@@ -6,10 +6,12 @@
     android:fillViewport="true"
     android:background="#F8F9FA">
 
+    <!-- Thêm paddingBottom để không bị Bottom Nav che mất nội dung -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingBottom="90dp">
 
         <RelativeLayout
             android:layout_width="match_parent"

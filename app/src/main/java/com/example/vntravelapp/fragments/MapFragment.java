@@ -394,24 +394,7 @@ public class MapFragment extends Fragment {
     }
 
     private void openTourDetail(@NonNull Tour tour) {
-        String primaryImageUrl = tour.getPrimaryImageUrl();
-        DetailFragment fragment = DetailFragment.newInstance(
-                tour.getTitle(),
-                tour.getLocation(),
-                tour.getPrice(),
-                tour.getDescription(),
-                tour.getItinerary(),
-                tour.getIncluded(),
-                tour.getExcluded(),
-                tour.getImageResId(),
-                primaryImageUrl,
-                new ArrayList<>(tour.getImageUrls()),
-                tour.getVideoUrl(),
-                tour.getRating(),
-                tour.getReviewCount(),
-                tour.getStartDate(),
-                tour.getEndDate()
-        );
+        DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_TOUR, tour.getId());
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)
@@ -420,28 +403,7 @@ public class MapFragment extends Fragment {
     }
 
     private void openHotelDetail(@NonNull Hotel hotel) {
-        ArrayList<String> imageUrls = new ArrayList<>();
-        if (hotel.getImageUrl() != null && !hotel.getImageUrl().trim().isEmpty()) {
-            imageUrls.add(hotel.getImageUrl().trim());
-        }
-
-        DetailFragment fragment = DetailFragment.newInstance(
-                hotel.getName(),
-                hotel.getLocation(),
-                hotel.getPrice(),
-                hotel.getDescription(),
-                "",
-                "",
-                "",
-                hotel.getImageRes(),
-                hotel.getImageUrl(),
-                imageUrls,
-                null,
-                hotel.getRating(),
-                hotel.getReviewCount(),
-                null,
-                null
-        );
+        DetailFragment fragment = DetailFragment.newInstanceWithItem(DetailFragment.ITEM_TYPE_HOTEL, hotel.getId());
         requireActivity().getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)
