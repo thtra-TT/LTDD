@@ -228,6 +228,12 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
     @Override
     public int getItemCount() { return tourList.size(); }
 
+    public void updateData(List<Tour> newTours) {
+        this.tourList.clear();
+        this.tourList.addAll(newTours);
+        notifyDataSetChanged();
+    }
+
     public static class TourViewHolder extends RecyclerView.ViewHolder {
         ImageView ivTourImage, ivPlayIcon, ivFavorite;
         VideoView vvTourPreview;
