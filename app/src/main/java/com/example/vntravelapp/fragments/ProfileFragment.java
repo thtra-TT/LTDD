@@ -6,13 +6,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,12 +24,12 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.bumptech.glide.Glide;
-import com.example.vntravelapp.HomeActivity;
 import com.example.vntravelapp.LoginActivity;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.adapters.ProfileTourAdapter;
 import com.example.vntravelapp.database.DatabaseHelper;
 import com.example.vntravelapp.models.Tour;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -46,20 +43,17 @@ public class ProfileFragment extends Fragment {
     private TextView tvUserEmail;
     private TextView tvUserBio;
 
-    private TextView tvStatTrips;
-    private TextView tvStatVisited;
-    private TextView tvStatFavorites;
-
     private RecyclerView rvRecommendations;
     private ProfileTourAdapter recommendationAdapter;
 
     private TextView tvBadgeExplorer;
     private TextView tvBadgeNature;
+    private TextView tvRecommendHeader;
 
     private View skeletonContainer;
     private View cardProfileHeader;
     private View profileHeaderCover;
-
+    private ImageView ivProfileCover;
 
     private DatabaseHelper db;
 
@@ -82,36 +76,23 @@ public class ProfileFragment extends Fragment {
         skeletonContainer = view.findViewById(R.id.skeletonContainer);
         cardProfileHeader = view.findViewById(R.id.cardProfileHeader);
         profileHeaderCover = view.findViewById(R.id.profileHeaderCover);
+        ivProfileCover = view.findViewById(R.id.ivProfileCover);
         tvBadgeExplorer = view.findViewById(R.id.tvBadgeExplorer);
         tvBadgeNature = view.findViewById(R.id.tvBadgeNature);
-
-
-        View statTrips = view.findViewById(R.id.statTrips);
-        View statVisited = view.findViewById(R.id.statVisited);
-        View statFavorites = view.findViewById(R.id.statFavorites);
-        tvStatTrips = statTrips.findViewById(R.id.tvStatValue);
-        tvStatVisited = statVisited.findViewById(R.id.tvStatValue);
-        tvStatFavorites = statFavorites.findViewById(R.id.tvStatValue);
-        ((TextView) statTrips.findViewById(R.id.tvStatLabel)).setText("Chuyến đi");
-        ((TextView) statVisited.findViewById(R.id.tvStatLabel)).setText("Đã đi");
-        ((TextView) statFavorites.findViewById(R.id.tvStatLabel)).setText("Yêu thích");
-
-        statTrips.setOnClickListener(v -> navigateToTripsTab(0));
-        statVisited.setOnClickListener(v -> navigateToTripsTab(1));
-        statFavorites.setOnClickListener(v -> navigateToTripsTab(3));
+        tvRecommendHeader = view.findViewById(R.id.tvProfileRecommendHeader);
 
         initAvatarLaunchers();
         ivAvatar.setOnClickListener(v -> showAvatarPicker());
         view.findViewById(R.id.btnEditProfile).setOnClickListener(v -> showEditProfileDialog());
 
-        setupOption(view.findViewById(R.id.optEditInfo), "Chỉnh sửa thông tin", "Tên, email, bio", android.R.drawable.ic_menu_edit, v -> showEditProfileDialog());
-        setupOption(view.findViewById(R.id.optPassword), "Đổi mật khẩu", "Bảo mật tài khoản", android.R.drawable.ic_lock_lock, v -> showChangePasswordDialog());
-        setupOption(view.findViewById(R.id.optFavorites), "Yêu thích", "Tour & khách sạn", android.R.drawable.ic_menu_myplaces, v -> navigateToTripsTab(3));
-        setupOption(view.findViewById(R.id.optMyReviews), "Review của tôi", "Tour & khách sạn", android.R.drawable.star_big_on, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
-        setupOption(view.findViewById(R.id.optJournal), "Nhật ký du lịch", "Hành trình của bạn", android.R.drawable.ic_menu_edit, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
-        setupOption(view.findViewById(R.id.optNotifications), "Thông báo", "Ưu đãi & nhắc lịch", android.R.drawable.ic_dialog_email, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
-        setupOption(view.findViewById(R.id.optSettings), "Cài đặt", "Ngôn ngữ, giao diện", android.R.drawable.ic_menu_preferences, v -> Toast.makeText(getContext(), "Sắp có", Toast.LENGTH_SHORT).show());
-        setupOption(view.findViewById(R.id.optLogout), "Đăng xuất", "Thoát tài khoản", android.R.drawable.ic_lock_power_off, v -> handleLogout());
+        setupOption(view.findViewById(R.id.optEditInfo), getString(R.string.profile_opt_edit), getString(R.string.profile_opt_edit_sub), R.drawable.ic_profile_edit, v -> showEditProfileDialog());
+        setupOption(view.findViewById(R.id.optPassword), getString(R.string.profile_opt_password), getString(R.string.profile_opt_password_sub), R.drawable.ic_profile_lock, v -> showChangePasswordDialog());
+        setupOption(view.findViewById(R.id.optFavorites), getString(R.string.profile_opt_favorites), getString(R.string.profile_opt_favorites_sub), R.drawable.ic_profile_favorite, v -> openProfileScreen(new ProfileFavoritesFragment()));
+        setupOption(view.findViewById(R.id.optMyReviews), getString(R.string.profile_opt_reviews), getString(R.string.profile_opt_reviews_sub), R.drawable.ic_profile_review, v -> openProfileScreen(new ProfileReviewsFragment()));
+        setupOption(view.findViewById(R.id.optJournal), getString(R.string.profile_opt_journal), getString(R.string.profile_opt_journal_sub), R.drawable.ic_profile_journal, v -> openProfileScreen(new ProfileJournalFragment()));
+        setupOption(view.findViewById(R.id.optNotifications), getString(R.string.profile_opt_notifications), getString(R.string.profile_opt_notifications_sub), R.drawable.ic_profile_notification, v -> openProfileScreen(new ProfileNotificationsFragment()));
+        setupOption(view.findViewById(R.id.optSettings), getString(R.string.profile_opt_settings), getString(R.string.profile_opt_settings_sub), R.drawable.ic_profile_settings, v -> openProfileScreen(new ProfileSettingsFragment()));
+        setupOption(view.findViewById(R.id.optLogout), getString(R.string.profile_opt_logout), getString(R.string.profile_opt_logout_sub), R.drawable.ic_profile_logout, v -> handleLogout());
 
         rvRecommendations = view.findViewById(R.id.rvProfileRecommendations);
         rvRecommendations.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
@@ -127,14 +108,9 @@ public class ProfileFragment extends Fragment {
 
         swipeRefreshLayout.setOnRefreshListener(this::loadProfileData);
         loadProfileData();
+        loadProfileCover();
 
         return view;
-    }
-
-    private void navigateToTripsTab(int tabIndex) {
-        if (getActivity() instanceof HomeActivity) {
-            ((HomeActivity) getActivity()).openTripsTab(tabIndex);
-        }
     }
 
     private void initAvatarLaunchers() {
@@ -235,9 +211,6 @@ public class ProfileFragment extends Fragment {
         int tripCount = db.getTripCount();
         int visitedCount = db.getVisitedLocationCount();
         int favoriteCount = db.getFavoriteCount();
-        tvStatTrips.setText(String.valueOf(tripCount));
-        tvStatVisited.setText(String.valueOf(visitedCount));
-        tvStatFavorites.setText(String.valueOf(favoriteCount));
 
         if (tvBadgeExplorer != null) {
             String level = tripCount >= 10 ? "Explorer Pro" : (tripCount >= 5 ? "Explorer" : "Beginner");
@@ -251,7 +224,17 @@ public class ProfileFragment extends Fragment {
 
     private void loadRecommendations() {
         List<Tour> tours = db.getRecommendedTours(8);
+        if (tours == null) {
+            tours = new ArrayList<>();
+        }
         recommendationAdapter.updateItems(tours);
+        boolean hasRecommendations = !tours.isEmpty();
+        if (tvRecommendHeader != null) {
+            tvRecommendHeader.setVisibility(hasRecommendations ? View.VISIBLE : View.GONE);
+        }
+        if (rvRecommendations != null) {
+            rvRecommendations.setVisibility(hasRecommendations ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void updateHeaderAnimation(int scrollY) {
@@ -280,23 +263,24 @@ public class ProfileFragment extends Fragment {
         String currentPhone = pref.getString("saved_phone", "");
         String currentBio = pref.getString("saved_bio", "");
 
-        LinearLayout layout = new LinearLayout(getContext());
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(40, 20, 40, 0);
-
-        EditText edtName = buildInput("Họ tên", currentName, InputType.TYPE_CLASS_TEXT, layout);
-        EditText edtEmail = buildInput("Email", currentEmail, InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS, layout);
-        EditText edtPhone = buildInput("Số điện thoại", currentPhone, InputType.TYPE_CLASS_PHONE, layout);
-        EditText edtBio = buildInput("Bio", currentBio, InputType.TYPE_CLASS_TEXT, layout);
+        View content = LayoutInflater.from(getContext()).inflate(R.layout.dialog_edit_profile, null, false);
+        TextInputEditText edtName = content.findViewById(R.id.edtProfileName);
+        TextInputEditText edtEmail = content.findViewById(R.id.edtProfileEmail);
+        TextInputEditText edtPhone = content.findViewById(R.id.edtProfilePhone);
+        TextInputEditText edtBio = content.findViewById(R.id.edtProfileBio);
+        if (edtName != null) edtName.setText(currentName);
+        if (edtEmail != null) edtEmail.setText(currentEmail);
+        if (edtPhone != null) edtPhone.setText(currentPhone);
+        if (edtBio != null) edtBio.setText(currentBio);
 
         new AlertDialog.Builder(getContext())
-                .setTitle("Cập nhật hồ sơ")
-                .setView(layout)
-                .setPositiveButton("Lưu", (dialog, which) -> {
-                    String name = edtName.getText().toString().trim();
-                    String email = edtEmail.getText().toString().trim();
-                    String phone = edtPhone.getText().toString().trim();
-                    String bio = edtBio.getText().toString().trim();
+                .setTitle(getString(R.string.dialog_edit_profile_title))
+                .setView(content)
+                .setPositiveButton(getString(R.string.dialog_save), (dialog, which) -> {
+                    String name = edtName != null ? edtName.getText().toString().trim() : "";
+                    String email = edtEmail != null ? edtEmail.getText().toString().trim() : "";
+                    String phone = edtPhone != null ? edtPhone.getText().toString().trim() : "";
+                    String bio = edtBio != null ? edtBio.getText().toString().trim() : "";
 
                     pref.edit()
                             .putString("saved_username", name.isEmpty() ? "Người dùng" : name)
@@ -312,7 +296,7 @@ public class ProfileFragment extends Fragment {
                     }
                     loadProfileData();
                 })
-                .setNegativeButton("Hủy", null)
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show();
     }
 
@@ -321,19 +305,16 @@ public class ProfileFragment extends Fragment {
         SharedPreferences pref = getActivity().getSharedPreferences("UserPrefs", Context.MODE_PRIVATE);
         String email = pref.getString("saved_email", "");
 
-        LinearLayout layout = new LinearLayout(getContext());
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(40, 20, 40, 0);
-
-        EditText edtOld = buildInput("Mật khẩu cũ", "", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD, layout);
-        EditText edtNew = buildInput("Mật khẩu mới", "", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD, layout);
+        View content = LayoutInflater.from(getContext()).inflate(R.layout.dialog_change_password, null, false);
+        TextInputEditText edtOld = content.findViewById(R.id.edtOldPassword);
+        TextInputEditText edtNew = content.findViewById(R.id.edtNewPassword);
 
         new AlertDialog.Builder(getContext())
-                .setTitle("Đổi mật khẩu")
-                .setView(layout)
-                .setPositiveButton("Cập nhật", (dialog, which) -> {
-                    String oldPass = edtOld.getText().toString();
-                    String newPass = edtNew.getText().toString();
+                .setTitle(getString(R.string.dialog_change_password_title))
+                .setView(content)
+                .setPositiveButton(getString(R.string.dialog_update), (dialog, which) -> {
+                    String oldPass = edtOld != null ? edtOld.getText().toString() : "";
+                    String newPass = edtNew != null ? edtNew.getText().toString() : "";
                     if (oldPass.isEmpty() || newPass.isEmpty()) {
                         Toast.makeText(getContext(), "Vui lòng nhập đủ thông tin", Toast.LENGTH_SHORT).show();
                         return;
@@ -341,18 +322,16 @@ public class ProfileFragment extends Fragment {
                     boolean ok = db.updateUserPassword(email, oldPass, newPass);
                     Toast.makeText(getContext(), ok ? "Đã đổi mật khẩu" : "Không thể đổi mật khẩu", Toast.LENGTH_SHORT).show();
                 })
-                .setNegativeButton("Hủy", null)
+                .setNegativeButton(getString(R.string.dialog_cancel), null)
                 .show();
     }
 
-    private EditText buildInput(String hint, String value, int inputType, LinearLayout container) {
-        EditText edt = new EditText(getContext());
-        edt.setHint(hint);
-        edt.setText(value);
-        edt.setInputType(inputType);
-        edt.setPadding(20, 20, 20, 20);
-        container.addView(edt);
-        return edt;
+    private void openProfileScreen(Fragment fragment) {
+        requireActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
     private void handleLogout() {
@@ -387,8 +366,18 @@ public class ProfileFragment extends Fragment {
         }
         if (ivIcon != null) {
             ivIcon.setImageResource(iconRes);
-            ivIcon.setColorFilter(getResources().getColor(android.R.color.holo_blue_dark));
+            ivIcon.setColorFilter(getResources().getColor(R.color.profile_accent));
         }
         view.setOnClickListener(listener);
+    }
+
+    private void loadProfileCover() {
+        if (ivProfileCover == null) return;
+        String url = getString(R.string.profile_cover_url);
+        Glide.with(this)
+                .load(url)
+                .placeholder(R.drawable.bg_home_header)
+                .centerCrop()
+                .into(ivProfileCover);
     }
 }
