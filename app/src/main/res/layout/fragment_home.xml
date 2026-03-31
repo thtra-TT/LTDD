@@ -61,13 +61,12 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:weightSum="4"
+            android:weightSum="3"
             android:paddingHorizontal="10dp"
             android:layout_marginTop="20dp">
 
             <include android:id="@+id/catTour" layout="@layout/item_category" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
             <include android:id="@+id/catHotel" layout="@layout/item_category" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <include android:id="@+id/catTicket" layout="@layout/item_category" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
             <include android:id="@+id/catCombo" layout="@layout/item_category" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
 
         </LinearLayout>
