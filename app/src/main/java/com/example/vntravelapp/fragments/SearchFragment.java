@@ -92,8 +92,7 @@ public class SearchFragment extends Fragment {
         allHotels = dbHelper.getAllHotels();
 
         // ── RecyclerView kết quả ─────────────────────────────────────────────
-        tourAdapter = new TourAdapter(new ArrayList<>());
-        rvResults.setLayoutManager(new LinearLayoutManager(requireContext()));
+        tourAdapter = new TourAdapter(new ArrayList<>(), false, "");        rvResults.setLayoutManager(new LinearLayoutManager(requireContext()));
         rvResults.setAdapter(tourAdapter);
 
         // ── Dropdown suggestions ─────────────────────────────────────────────
@@ -230,8 +229,7 @@ public class SearchFragment extends Fragment {
             if (matchTitle || matchLocation) results.add(t);
         }
 
-        tourAdapter = new TourAdapter(results);
-        rvResults.setAdapter(tourAdapter);
+        tourAdapter = new TourAdapter(results, false, "");        rvResults.setAdapter(tourAdapter);
 
         if (results.isEmpty()) {
             rvResults.setVisibility(View.GONE);

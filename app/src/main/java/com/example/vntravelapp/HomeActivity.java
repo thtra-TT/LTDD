@@ -1,11 +1,12 @@
 package com.example.vntravelapp;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
 import com.example.vntravelapp.fragments.HomeFragment;
 import com.example.vntravelapp.fragments.MapFragment;
@@ -25,20 +26,36 @@ public class HomeActivity extends AppCompatActivity {
 
         bottomNav = findViewById(R.id.bottomNavigation);
 
-        // Load Home ngay lần đầu
+        SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String role = pref.getString("saved_role", "BUYER");
+
+        if ("SELLER".equals(role)) {
+            bottomNav.getMenu().findItem(R.id.nav_trip).setVisible(false);
+        }
+
         if (savedInstanceState == null) {
             loadFragment(new HomeFragment());
         }
 
-        // Xử lý chọn tab bottom nav
         bottomNav.setOnItemSelectedListener(item -> {
             Fragment selectedFragment = null;
             int id = item.getItemId();
+
             if (id == R.id.nav_home) {
                 selectedFragment = new HomeFragment();
+
             } else if (id == R.id.nav_map) {
                 selectedFragment = new MapFragment();
+
             } else if (id == R.id.nav_trip) {
+                SharedPreferences tripPref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+                String tripRole = tripPref.getString("saved_role", "BUYER");
+
+                if ("SELLER".equals(tripRole)) {
+                    Toast.makeText(this, "Người bán không có mục chuyến đi", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+
                 TripFragment tripFragment = new TripFragment();
                 if (pendingTripTab >= 0) {
                     Bundle args = new Bundle();
@@ -47,28 +64,28 @@ public class HomeActivity extends AppCompatActivity {
                     pendingTripTab = -1;
                 }
                 selectedFragment = tripFragment;
+
             } else if (id == R.id.nav_profile) {
                 selectedFragment = new ProfileFragment();
             }
-            loadFragment(selectedFragment);
-            return true;
+
+            if (selectedFragment != null) {
+                loadFragment(selectedFragment);
+                return true;
+            }
+            return false;
         });
 
-        // ✅ Lắng nghe mỗi khi back stack thay đổi
-        // — bắt được cả khi fragment con tự replace hoặc popBackStack
         getSupportFragmentManager().addOnBackStackChangedListener(() -> {
             Fragment current = getCurrentFragment();
             handleBottomNavVisibility(current);
         });
     }
 
-    // ── Lấy fragment đang hiển thị ───────────────────────────────────────────
     private Fragment getCurrentFragment() {
-        return getSupportFragmentManager()
-                .findFragmentById(R.id.fragment_container);
+        return getSupportFragmentManager().findFragmentById(R.id.fragment_container);
     }
 
-    // ── Load fragment + xử lý ẩn/hiện ───────────────────────────────────────
     private void loadFragment(Fragment fragment) {
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_container, fragment)
@@ -76,7 +93,6 @@ public class HomeActivity extends AppCompatActivity {
         handleBottomNavVisibility(fragment);
     }
 
-    // ── Chỉ hiển thị bottom nav ở 4 trang chính ──────────────────────────────
     private void handleBottomNavVisibility(Fragment fragment) {
         if (fragment == null) return;
 
@@ -90,7 +106,6 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    // ── Cho fragment con gọi trực tiếp nếu cần ───────────────────────────────
     public void hideBottomNav() {
         bottomNav.setVisibility(View.GONE);
     }

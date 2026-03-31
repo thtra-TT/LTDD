@@ -1,5 +1,6 @@
 package com.example.vntravelapp.fragments;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -7,6 +8,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -38,6 +40,16 @@ public class TripFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_trip, container, false);
+
+        SharedPreferences pref = requireActivity().getSharedPreferences("UserPrefs", requireContext().MODE_PRIVATE);
+        String role = pref.getString("saved_role", "BUYER");
+
+        if ("SELLER".equals(role)) {
+            Toast.makeText(getContext(), "Người bán không có mục chuyến đi", Toast.LENGTH_SHORT).show();
+            requireActivity().getSupportFragmentManager().popBackStack();
+            return view;
+        }
+
         db = new DatabaseHelper(getContext());
 
         TabLayout tabLayout = view.findViewById(R.id.tabLayoutTrips);

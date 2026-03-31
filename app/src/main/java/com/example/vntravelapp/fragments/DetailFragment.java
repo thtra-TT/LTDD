@@ -1,5 +1,6 @@
 package com.example.vntravelapp.fragments;
 
+import android.content.SharedPreferences;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Typeface;
@@ -228,6 +229,7 @@ public class DetailFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_detail, container, false);
 
         ViewPager2 vpDetailMedia = view.findViewById(R.id.vpDetailMedia);
@@ -310,6 +312,15 @@ public class DetailFragment extends Fragment {
                 Toast.makeText(getContext(), "Tour này hiện không khả dụng", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            SharedPreferences pref = requireActivity().getSharedPreferences("UserPrefs", getContext().MODE_PRIVATE);
+            String role = pref.getString("saved_role", "BUYER");
+
+            if ("SELLER".equals(role)) {
+                Toast.makeText(getContext(), "Tài khoản người bán không được đặt tour", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             BookingFragment bookingFragment = BookingFragment.newInstance(
                     title, price, location, imageUrl, imageRes, startDate, endDate
             );

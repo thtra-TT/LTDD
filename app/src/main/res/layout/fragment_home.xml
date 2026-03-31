@@ -1,164 +1,200 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true"
     android:background="#F8F9FA">
 
-    <!-- Thêm paddingBottom để không bị Bottom Nav che mất nội dung -->
-    <LinearLayout
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingBottom="90dp">
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="156dp"
-            android:background="@drawable/bg_home_header"
-            android:padding="20dp">
-
-            <TextView
-                android:id="@+id/tvWelcome"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="Xin chào, Du khách!"
-                android:textColor="@android:color/white"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_below="@id/tvWelcome"
-                android:layout_marginTop="20dp"
-                android:background="@drawable/bg_search"
-                android:gravity="center_vertical"
-                android:paddingHorizontal="15dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@android:drawable/ic_menu_search"
-                    app:tint="#888" />
-
-                <EditText
-                    android:id="@+id/etSearchHome"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:background="@null"
-                    android:clickable="true"
-                    android:focusable="false"
-                    android:focusableInTouchMode="false"
-                    android:cursorVisible="false"
-                    android:hint="Tìm tour, khách sạn, địa điểm..."
-                    android:textSize="14sp" />
-            </LinearLayout>
-        </RelativeLayout>
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:background="#F8F9FA">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:weightSum="3"
-            android:paddingHorizontal="10dp"
-            android:layout_marginTop="20dp">
+            android:orientation="vertical"
+            android:paddingBottom="90dp">
 
-            <include android:id="@+id/catTour" layout="@layout/item_category" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <include android:id="@+id/catHotel" layout="@layout/item_category" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
-            <include android:id="@+id/catCombo" layout="@layout/item_category" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"/>
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="156dp"
+                android:background="@drawable/bg_home_header"
+                android:padding="20dp">
+
+                <TextView
+                    android:id="@+id/tvWelcome"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="Xin chào, Du khách!"
+                    android:textColor="@android:color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_below="@id/tvWelcome"
+                    android:layout_marginTop="20dp"
+                    android:background="@drawable/bg_search"
+                    android:gravity="center_vertical"
+                    android:paddingHorizontal="15dp">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@android:drawable/ic_menu_search"
+                        app:tint="#888" />
+
+                    <EditText
+                        android:id="@+id/etSearchHome"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:background="@null"
+                        android:clickable="true"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
+                        android:cursorVisible="false"
+                        android:hint="Tìm tour, khách sạn, địa điểm..."
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </RelativeLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:weightSum="3"
+                android:paddingHorizontal="10dp"
+                android:layout_marginTop="20dp">
+
+                <include
+                    android:id="@+id/catTour"
+                    layout="@layout/item_category"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/catHotel"
+                    layout="@layout/item_category"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+
+                <include
+                    android:id="@+id/catCombo"
+                    layout="@layout/item_category"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <RelativeLayout
+                android:id="@+id/rlPopularHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="15dp"
+                android:layout_marginTop="25dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔥 Tour Phổ Biến Nhất"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#333" />
+            </RelativeLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvPopularTours"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="5dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <RelativeLayout
+                android:id="@+id/rlNearYouHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="15dp"
+                android:layout_marginTop="25dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/tvNearYouTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📍 Địa điểm gần bạn"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#333" />
+            </RelativeLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvNearYou"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingHorizontal="5dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="15dp"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    android:id="@+id/tvFeaturedTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tất cả tour"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#333" />
+            </RelativeLayout>
+
+            <TextView
+                android:id="@+id/tvNoResults"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="15dp"
+                android:layout_marginTop="10dp"
+                android:gravity="center"
+                android:text="Không tìm thấy"
+                android:textColor="#777"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvTours"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="5dp"
+                android:nestedScrollingEnabled="false" />
 
         </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
-        <!-- Popular Section -->
-        <RelativeLayout
-            android:id="@+id/rlPopularHeader"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="15dp"
-            android:layout_marginTop="25dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🔥 Tour Phổ Biến Nhất"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#333"/>
-        </RelativeLayout>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddTour"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="20dp"
+        android:src="@android:drawable/ic_input_add"
+        android:visibility="gone"
+        app:backgroundTint="#1565C0"
+        app:tint="#FFFFFF" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvPopularTours"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            android:paddingHorizontal="5dp"
-            android:clipToPadding="false"/>
-
-        <!-- Near You Section -->
-        <RelativeLayout
-            android:id="@+id/rlNearYouHeader"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="15dp"
-            android:layout_marginTop="25dp"
-            android:visibility="gone">
-            <TextView
-                android:id="@+id/tvNearYouTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="📍 Địa điểm gần bạn"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#333"/>
-        </RelativeLayout>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvNearYou"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            android:paddingHorizontal="5dp"
-            android:clipToPadding="false"
-            android:visibility="gone"/>
-
-        <!-- All Tours Section -->
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingHorizontal="15dp"
-            android:layout_marginTop="20dp">
-            <TextView
-                android:id="@+id/tvFeaturedTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Tất cả tour"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#333"/>
-        </RelativeLayout>
-
-        <TextView
-            android:id="@+id/tvNoResults"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginHorizontal="15dp"
-            android:layout_marginTop="10dp"
-            android:gravity="center"
-            android:text="Không tìm thấy"
-            android:textColor="#777"
-            android:textSize="14sp"
-            android:visibility="gone" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/rvTours"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="5dp"
-            android:nestedScrollingEnabled="false"/>
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+</FrameLayout>

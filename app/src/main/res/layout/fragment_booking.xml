@@ -50,12 +50,12 @@
             android:id="@+id/btnConfirm"
             android:layout_width="150dp"
             android:layout_height="50dp"
-            android:text="Thanh toán"
+            android:text="Xác nhận"
             android:textAllCaps="false"
             android:textColor="#FFFFFF"
             android:textSize="15sp"
             android:textStyle="bold"
-            android:backgroundTint="#1565C0"
+            android:background="@drawable/bg_primary_button"
             android:stateListAnimator="@null" />
     </LinearLayout>
 
@@ -149,7 +149,9 @@
                         android:layout_height="100dp"
                         android:scaleType="centerCrop"
                         android:src="@android:drawable/ic_menu_gallery"
-                        android:layout_marginEnd="16dp" />
+                        android:layout_marginEnd="16dp"
+                        android:background="@drawable/bg_image_rounded"
+                        android:clipToOutline="true" />
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -243,6 +245,7 @@
                         </LinearLayout>
 
                         <!-- Stepper người lớn -->
+                        <!-- Stepper người lớn -->
                         <LinearLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
@@ -250,6 +253,7 @@
                             android:gravity="center_vertical"
                             android:background="#F2F6FF">
 
+                            <!-- Minus -->
                             <TextView
                                 android:id="@+id/btnAdultMinus"
                                 android:layout_width="38dp"
@@ -262,6 +266,7 @@
                                 android:background="#FFFFFF"
                                 android:elevation="1dp" />
 
+                            <!-- Value -->
                             <TextView
                                 android:id="@+id/edtAdult"
                                 android:layout_width="44dp"
@@ -273,6 +278,7 @@
                                 android:gravity="center"
                                 android:background="#F2F6FF" />
 
+                            <!-- Plus -->
                             <TextView
                                 android:id="@+id/btnAdultPlus"
                                 android:layout_width="38dp"
@@ -284,6 +290,7 @@
                                 android:textStyle="bold"
                                 android:background="#1565C0"
                                 android:elevation="1dp" />
+
                         </LinearLayout>
                     </LinearLayout>
 

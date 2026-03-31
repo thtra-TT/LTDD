@@ -1,6 +1,7 @@
 package com.example.vntravelapp.fragments;
 
 import android.app.DatePickerDialog;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Patterns;
 import android.view.LayoutInflater;
@@ -151,30 +152,36 @@ public class BookingFragment extends Fragment {
     private double parsePrice(String s) { try { return Double.parseDouble(s.replace(".", "").replace("đ", "")); } catch (Exception e) { return 0; } }
 
     private void handleBooking() {
+
+        SharedPreferences pref = requireActivity().getSharedPreferences("UserPrefs", requireContext().MODE_PRIVATE);
+        String role = pref.getString("saved_role", "BUYER");
+
+        if (!"BUYER".equals(role)) {
+            Toast.makeText(getContext(), "Người bán không thể đặt tour", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         String name = edtName.getText().toString().trim();
         String phone = edtPhone.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
+        String userEmail = pref.getString("saved_email", "");
 
-        // 1. Kiểm tra ngày đi
         if (selectedDateStr.isEmpty()) {
             Toast.makeText(getContext(), "Vui lòng chọn ngày khởi hành!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 2. Kiểm tra các trường trống
         if (name.isEmpty() || phone.isEmpty() || email.isEmpty() || countAdult == 0) {
             Toast.makeText(getContext(), "Vui lòng nhập đầy đủ thông tin và ít nhất 1 người lớn!", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 3. Bắt lỗi Số điện thoại (10 số, bắt đầu bằng 0)
         if (!phone.matches("^0\\d{9}$")) {
             edtPhone.setError("Số điện thoại không hợp lệ (10 số, bắt đầu bằng 0)");
             edtPhone.requestFocus();
             return;
         }
 
-        // 4. Bắt lỗi Email
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             edtEmail.setError("Email không đúng định dạng");
             edtEmail.requestFocus();
@@ -182,11 +189,17 @@ public class BookingFragment extends Fragment {
         }
 
         DatabaseHelper db = new DatabaseHelper(getContext());
-        boolean success = db.insertOrder(title, selectedDateStr, countAdult + countChild, name, phone);
+        boolean success = db.insertOrder(
+                title,
+                selectedDateStr,
+                countAdult + countChild,
+                name,
+                phone,
+                userEmail
+        );
 
         if (success) {
             Toast.makeText(getContext(), "Đặt tour thành công!", Toast.LENGTH_SHORT).show();
-            // Chuyển sang màn hình chuyến đi của tôi
             if (getActivity() != null) {
                 requireActivity().getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment_container, new TripFragment())

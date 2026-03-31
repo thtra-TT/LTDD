@@ -212,6 +212,32 @@
                     android:textColor="#999"
                     android:textSize="11sp" />
             </RelativeLayout>
+
+            <LinearLayout
+                android:id="@+id/layoutSellerActions"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:padding="10dp"
+                android:visibility="gone">
+
+                <Button
+                    android:id="@+id/btnEditTour"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Sửa"
+                    android:textAllCaps="false"/>
+
+                <Button
+                    android:id="@+id/btnDeleteTour"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Xóa"
+                    android:textAllCaps="false"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
+
         </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

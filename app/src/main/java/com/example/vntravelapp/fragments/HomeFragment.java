@@ -1,6 +1,8 @@
 package com.example.vntravelapp.fragments;
 
 import android.Manifest;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -19,6 +21,7 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.vntravelapp.AddEditTourActivity;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.adapters.TourAdapter;
 import com.example.vntravelapp.database.DatabaseHelper;
@@ -26,6 +29,7 @@ import com.example.vntravelapp.models.Hotel;
 import com.example.vntravelapp.models.Tour;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -77,19 +81,45 @@ public class HomeFragment extends Fragment {
         view.findViewById(R.id.catCombo).setOnClickListener(v -> switchFragment(new ComboFragment()));
 
         // Data Loading
-        allTours = dbHelper.getAllTours(); // Chỉ lấy type = 'Tour'
-        popularTours = dbHelper.getPopularTours();
-        allDestinations = dbHelper.getAllDestinations(); // Lấy type = 'Destination'
+        SharedPreferences pref = requireActivity().getSharedPreferences("UserPrefs", requireContext().MODE_PRIVATE);
+        String role = pref.getString("saved_role", "BUYER");
+        String email = pref.getString("saved_email", "");
 
-        // Setup Main RecyclerView (All Tours)
+        FloatingActionButton fabAddTour = view.findViewById(R.id.fabAddTour);
+
+        if ("SELLER".equals(role)) {
+            fabAddTour.setVisibility(View.VISIBLE);
+        } else {
+            fabAddTour.setVisibility(View.GONE);
+        }
+
+        fabAddTour.setOnClickListener(v -> {
+            Intent intent = new Intent(getContext(), AddEditTourActivity.class);
+            intent.putExtra("mode", "add");
+            startActivity(intent);
+        });
+
+        allTours = dbHelper.getAllTours();
+
+        popularTours = dbHelper.getPopularTours();
+        allDestinations = dbHelper.getAllDestinations();
+
         rvResults.setLayoutManager(new LinearLayoutManager(getContext()));
         rvResults.setNestedScrollingEnabled(false);
-        tourAdapter = new TourAdapter(new ArrayList<>(allTours));
+        tourAdapter = new TourAdapter(
+                new ArrayList<>(allTours),
+                "SELLER".equals(role),
+                email
+        );
         rvResults.setAdapter(tourAdapter);
 
         // Setup Popular RecyclerView
         rvPopular.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        popularAdapter = new TourAdapter(new ArrayList<>(popularTours)) {
+        popularAdapter = new TourAdapter(
+                new ArrayList<>(popularTours),
+                false,
+                ""
+        ) {
             @Override
             public void onBindViewHolder(@NonNull TourViewHolder holder, int position) {
                 super.onBindViewHolder(holder, position);
@@ -102,7 +132,11 @@ public class HomeFragment extends Fragment {
 
         // Setup Near You RecyclerView
         rvNearYou.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        nearYouAdapter = new TourAdapter(new ArrayList<>(nearYouTours)) {
+        nearYouAdapter = new TourAdapter(
+                new ArrayList<>(nearYouTours),
+                false,
+                ""
+        ) {
             @Override
             public void onBindViewHolder(@NonNull TourViewHolder holder, int position) {
                 super.onBindViewHolder(holder, position);

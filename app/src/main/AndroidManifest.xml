@@ -15,7 +15,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.VNTravelApp">
 
-        <!-- Google Maps API Key Placeholder -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="YOUR_GOOGLE_MAPS_API_KEY_HERE" />
@@ -49,6 +48,10 @@
 
         <activity
             android:name="com.example.vntravelapp.HomeActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".AddEditTourActivity"
             android:exported="false" />
 
     </application>

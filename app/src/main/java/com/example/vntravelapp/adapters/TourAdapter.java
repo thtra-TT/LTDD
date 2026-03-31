@@ -1,5 +1,6 @@
 package com.example.vntravelapp.adapters;
 
+import android.content.Intent;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.net.Uri;
@@ -10,7 +11,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
+import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
 import android.widget.Toast;
@@ -18,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
+import com.example.vntravelapp.AddEditTourActivity;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.database.DatabaseHelper;
 import com.example.vntravelapp.fragments.DetailFragment;
@@ -35,8 +39,12 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
     private DatabaseHelper dbHelper;
     private Set<String> favoriteTitles = new HashSet<>();
 
-    public TourAdapter(List<Tour> tourList) {
+    private boolean isSeller;
+    private String sellerEmail;
+    public TourAdapter(List<Tour> tourList, boolean isSeller, String sellerEmail) {
         this.tourList = tourList;
+        this.isSeller = isSeller;
+        this.sellerEmail = sellerEmail;
     }
 
     @NonNull
@@ -48,6 +56,16 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull TourViewHolder holder, int position) {
+        LinearLayout sellerLayout = holder.itemView.findViewById(R.id.layoutSellerActions);
+        Button btnEdit = holder.itemView.findViewById(R.id.btnEditTour);
+        Button btnDelete = holder.itemView.findViewById(R.id.btnDeleteTour);
+
+        if (isSeller) {
+            sellerLayout.setVisibility(View.VISIBLE);
+        } else {
+            sellerLayout.setVisibility(View.GONE);
+        }
+
         if (dbHelper == null) {
             dbHelper = new DatabaseHelper(holder.itemView.getContext());
             favoriteTitles = new HashSet<>(dbHelper.getFavoriteTitles("Tour"));
@@ -87,6 +105,29 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
             holder.itemView.setAlpha(1.0f);
             holder.ivTourImage.setColorFilter(null);
         }
+
+        btnEdit.setOnClickListener(v -> {
+            Intent intent = new Intent(holder.itemView.getContext(), AddEditTourActivity.class);
+            intent.putExtra("mode", "edit");
+            intent.putExtra("tour_id", tour.getId());
+            holder.itemView.getContext().startActivity(intent);
+        });
+
+        btnDelete.setOnClickListener(v -> {
+            DatabaseHelper db = new DatabaseHelper(holder.itemView.getContext());
+            boolean success = db.deleteSellerTour(tour.getId());
+
+            if (success) {
+                int pos = holder.getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    tourList.remove(pos);
+                    notifyItemRemoved(pos);
+                }
+                Toast.makeText(holder.itemView.getContext(), "Đã xóa tour", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(holder.itemView.getContext(), "Xóa thất bại", Toast.LENGTH_SHORT).show();
+            }
+        });
 
         // Xử lý Badge thông minh
         String badge = tour.getBadge();

@@ -1,6 +1,7 @@
 package com.example.vntravelapp.fragments;
 
 import android.app.AlertDialog;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -131,13 +132,17 @@ public class TripsTabFragment extends Fragment {
     }
 
     private void loadData() {
+        SharedPreferences pref = requireActivity().getSharedPreferences("UserPrefs", requireContext().MODE_PRIVATE);
+        String email = pref.getString("saved_email", "");
+
         if (type == TYPE_UPCOMING) {
-            allItems = db.getUpcomingTrips();
+            allItems = db.getUpcomingTripsByUser(email);
         } else if (type == TYPE_COMPLETED) {
-            allItems = db.getCompletedTrips();
+            allItems = db.getCompletedTripsByUser(email);
         } else {
-            allItems = db.getCancelledTrips();
+            allItems = db.getCancelledTripsByUser(email);
         }
+
         adapter.submitList(allItems);
         tvEmpty.setVisibility(allItems.isEmpty() ? View.VISIBLE : View.GONE);
 

@@ -6,58 +6,80 @@
     android:orientation="vertical"
     android:background="#F8F9FA">
 
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="15dp">
+        android:paddingStart="16dp"
+        android:paddingTop="18dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="12dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Chuyến đi"
-            android:textSize="22sp"
+            android:textSize="24sp"
             android:textStyle="bold"
-            android:textColor="#333" />
+            android:textColor="#1A2A4A" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:text="Quản lý toàn bộ hành trình của bạn"
             android:textSize="13sp"
-            android:textColor="#777" />
+            android:textColor="#7A8FAF" />
 
         <EditText
             android:id="@+id/edtTripSearch"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
-            android:layout_marginTop="12dp"
-            android:background="@drawable/bg_search"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_input"
             android:hint="Tìm kiếm chuyến đi"
-            android:paddingHorizontal="12dp"
-            android:textSize="13sp" />
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:textSize="14sp"
+            android:textColor="#1A2A4A"
+            android:textColorHint="#9AAAC8" />
     </LinearLayout>
 
+    <!-- Tabs -->
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutTrips"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="15dp"
-        app:tabIndicatorColor="#007BFF"
-        app:tabSelectedTextColor="#007BFF"
-        app:tabTextColor="#777" />
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="#FFFFFF"
+        app:tabIndicatorColor="#1565C0"
+        app:tabIndicatorHeight="3dp"
+        app:tabSelectedTextColor="#1565C0"
+        app:tabTextColor="#7A8FAF" />
 
+    <!-- ViewPager -->
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/vpTrips"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1" />
+        android:layout_weight="1"
+        android:layout_marginTop="8dp" />
 
+    <!-- Recommendations -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="15dp">
+        android:background="#FFFFFF"
+        android:paddingStart="16dp"
+        android:paddingTop="14dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -65,7 +87,7 @@
             android:text="Gợi ý cho bạn"
             android:textStyle="bold"
             android:textSize="16sp"
-            android:textColor="#333" />
+            android:textColor="#1A2A4A" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvTripRecommendations"
@@ -73,4 +95,5 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp" />
     </LinearLayout>
+
 </LinearLayout>

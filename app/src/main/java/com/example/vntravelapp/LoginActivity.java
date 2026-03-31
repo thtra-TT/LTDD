@@ -98,10 +98,10 @@ public class LoginActivity extends AppCompatActivity {
 
                 // Tự động tạo tài khoản trong DB nếu chưa tồn tại (để đồng nhất dữ liệu)
                 if (!dbHelper.checkEmailExists(email)) {
-                    dbHelper.registerUser(email, "google_auth_no_password", name, "");
+                    dbHelper.registerUser(email, "google_auth_no_password", name, "", "BUYER");
                 }
 
-                saveUserToPrefs(email, name, photoUrl);
+                saveUserToPrefs(email, name, photoUrl, "BUYER");
                 Toast.makeText(this, "Chào mừng " + name, Toast.LENGTH_SHORT).show();
                 navigateToHome(email, name, photoUrl);
             }
@@ -131,9 +131,10 @@ public class LoginActivity extends AppCompatActivity {
         if (cursor != null && cursor.moveToFirst()) {
             String fullname = cursor.getString(cursor.getColumnIndexOrThrow("fullname"));
             String userImage = cursor.getString(cursor.getColumnIndexOrThrow("user_image"));
+            String role = cursor.getString(cursor.getColumnIndexOrThrow("role"));
             cursor.close();
 
-            saveUserToPrefs(email, fullname, userImage);
+            saveUserToPrefs(email, fullname, userImage, role);
             Toast.makeText(this, "Đăng nhập thành công!", Toast.LENGTH_SHORT).show();
             navigateToHome(email, fullname, userImage);
         } else {
@@ -142,13 +143,14 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private void saveUserToPrefs(String email, String name, String image) {
+    private void saveUserToPrefs(String email, String name, String image, String role) {
         SharedPreferences pref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
         editor.putBoolean("is_logged_in", true);
         editor.putString("saved_email", email);
         editor.putString("saved_username", name);
         editor.putString("saved_user_image", image);
+        editor.putString("saved_role", role);
         editor.apply();
     }
 

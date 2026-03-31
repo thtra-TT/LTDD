@@ -27,7 +27,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
     private static final String DATABASE_NAME = "vntravel.db";
-    private static final int DATABASE_VERSION = 50; // Bumped version for type separation
+    private static final int DATABASE_VERSION = 51; // Bumped version for type separation
     private static final String FALLBACK_TOUR_IMAGE = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1400&q=80";
 
     private static final String TABLE_TOURS = "tours";
@@ -81,14 +81,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_LONGITUDE = "longitude";
     private static final String COLUMN_START_DATE = "start_date";
     private static final String COLUMN_END_DATE = "end_date";
+    private static final String COLUMN_USER_EMAIL = "user_email";
 
-    // Bus Trip columns
+    private static final String ROLE_BUYER = "BUYER";
+    private static final String ROLE_SELLER = "SELLER";
+
+    private static final String COLUMN_SELLER_EMAIL = "seller_email";
     private static final String COLUMN_DEPARTURE = "departure";
     private static final String COLUMN_DESTINATION = "destination";
     private static final String COLUMN_DEPARTURE_TIME = "departure_time";
     private static final String COLUMN_BUS_COMPANY = "bus_company";
     private static final String COLUMN_AVAILABLE_SEATS = "available_seats";
     private static final String COLUMN_DATE = "date";
+
+    private static final String COLUMN_ROLE = "role";
 
     private static final Map<String, double[]> LOCATION_COORDINATES = buildLocationCoordinates();
 
@@ -120,6 +126,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_LONGITUDE + " REAL DEFAULT 0, " +
                 COLUMN_START_DATE + " TEXT, " +
                 COLUMN_END_DATE + " TEXT, " +
+                COLUMN_SELLER_EMAIL + " TEXT, " +
                 COLUMN_TYPE + " TEXT DEFAULT 'Tour')");
         db.execSQL("CREATE TABLE " + TABLE_HOTELS + " (" +
                 COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -135,15 +142,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_LONGITUDE + " REAL DEFAULT 0)");
         db.execSQL("CREATE TABLE " + TABLE_COMBOS + " (" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COLUMN_TITLE + " TEXT, " + COLUMN_LOCATION + " TEXT, " + COLUMN_DESCRIPTION + " TEXT, " + COLUMN_ORIGINAL_PRICE + " TEXT, " + COLUMN_PRICE + " TEXT, " + COLUMN_IMAGE_RES + " INTEGER, " + COLUMN_IMAGE_URL + " TEXT, " + COLUMN_RATING + " REAL, " + COLUMN_BADGE + " TEXT)");
         db.execSQL("CREATE TABLE " + TABLE_TICKETS + " (" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COLUMN_TITLE + " TEXT, " + COLUMN_DATE_RANGE + " TEXT, " + COLUMN_PRICE + " TEXT, " + COLUMN_DISCOUNT + " TEXT, " + COLUMN_TYPE + " TEXT, " + COLUMN_IMAGE_RES + " INTEGER, " + COLUMN_IMAGE_URL + " TEXT)");
-        db.execSQL("CREATE TABLE " + TABLE_USERS + " (" + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " + COLUMN_EMAIL + " TEXT UNIQUE, " + COLUMN_PASSWORD + " TEXT, " + COLUMN_FULLNAME + " TEXT, " + COLUMN_PHONE + " TEXT, " + COLUMN_USER_IMAGE + " TEXT)");
-        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_ORDERS + " (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT," +
-                "title TEXT," +
-                "date TEXT," +
-                "people INTEGER," +
-                "name TEXT," +
-                "phone TEXT" +
-                ")");
+        db.execSQL("CREATE TABLE " + TABLE_USERS + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_EMAIL + " TEXT UNIQUE, " +
+                COLUMN_PASSWORD + " TEXT, " +
+                COLUMN_FULLNAME + " TEXT, " +
+                COLUMN_PHONE + " TEXT, " +
+                COLUMN_USER_IMAGE + " TEXT, " +
+                COLUMN_ROLE + " TEXT DEFAULT 'BUYER')");
         db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_FAVORITES + " (" +
                 COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 COLUMN_TITLE + " TEXT, " +
@@ -185,11 +191,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_BUS_COMPANY + " TEXT, " +
                 COLUMN_AVAILABLE_SEATS + " INTEGER, " +
                 COLUMN_DATE + " TEXT)");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_ORDERS + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_TITLE + " TEXT, " +
+                COLUMN_DATE + " TEXT, " +
+                "people INTEGER, " +
+                "name TEXT, " +
+                "phone TEXT, " +
+                COLUMN_USER_EMAIL + " TEXT" +
+                ")");
         seedData(db);
     }
 
     private void seedData(SQLiteDatabase db) {
-        String VIDEO_1 = "https://www.w3schools.com/html/mov_bbb.mp4";        String VIDEO_2 = "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
+        String VIDEO_1 = "https://www.w3schools.com/html/mov_bbb.mp4";
+        String VIDEO_2 = "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
         String VIDEO_3 = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4";
         String VIDEO_4 = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4";
         String VIDEO_5 = "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4";
@@ -817,13 +833,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return exists;
     }
 
-    public boolean registerUser(String email, String password, String fullname, String phone) {
+    public boolean registerUser(String email, String password, String fullname, String phone, String role) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_EMAIL, email);
         values.put(COLUMN_PASSWORD, password);
         values.put(COLUMN_FULLNAME, fullname);
         values.put(COLUMN_PHONE, phone);
+        values.put(COLUMN_ROLE, role);
         long result = db.insert(TABLE_USERS, null, values);
         return result != -1;
     }
@@ -833,7 +850,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.rawQuery("SELECT * FROM " + TABLE_USERS + " WHERE " + COLUMN_EMAIL + " = ? AND " + COLUMN_PASSWORD + " = ?", new String[]{email, password});
     }
 
-    public boolean insertOrder(String title, String date, int people, String name, String phone) {
+    public boolean insertOrder(String title, String date, int people, String name, String phone, String userEmail) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put("title", title);
@@ -841,6 +858,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("people", people);
         values.put("name", name);
         values.put("phone", phone);
+        values.put("user_email", userEmail);
         return db.insert(TABLE_ORDERS, null, values) != -1;
     }
 
@@ -1199,5 +1217,230 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert(TABLE_CANCELLED_TRIPS, null, v);
 
         db.delete(TABLE_ORDERS, "title = ? AND date = ?", new String[]{title, date});
+    }
+
+    public Cursor getOrdersByUser(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT * FROM orders WHERE user_email = ?",
+                new String[]{email}
+        );
+    }
+
+    public List<TripItem> getUpcomingTripsByUser(String email) {
+        List<TripItem> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String currentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        Cursor c = db.rawQuery(
+                "SELECT o.title, o.date, t.location, t.price, t.image_url " +
+                        "FROM orders o LEFT JOIN tours t ON o.title = t.title " +
+                        "WHERE o.user_email = ?",
+                new String[]{email}
+        );
+
+        if (c.moveToFirst()) {
+            do {
+                list.add(new TripItem(
+                        c.getString(0),
+                        c.getString(2) != null ? c.getString(2) : "Unknown",
+                        c.getString(1),
+                        "Sắp đi",
+                        c.getString(3) != null ? c.getString(3) : "0đ",
+                        c.getString(4),
+                        ""
+                ));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public List<TripItem> getCompletedTripsByUser(String email) {
+        List<TripItem> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String currentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+
+        String query = "SELECT o.title, o.date, t.location, t.price, t.image_url " +
+                "FROM orders o LEFT JOIN tours t ON o.title = t.title " +
+                "WHERE o.user_email = ? AND o.date < ?";
+
+        Cursor c = db.rawQuery(query, new String[]{email, currentDate});
+        if (c.moveToFirst()) {
+            do {
+                list.add(new TripItem(
+                        c.getString(0), // title
+                        c.getString(2) != null ? c.getString(2) : "Unknown", // location
+                        c.getString(1), // date
+                        "Đã hoàn thành", // status
+                        c.getString(3) != null ? c.getString(3) : "0đ", // price
+                        c.getString(4), // image
+                        "" // reason
+                ));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public List<TripItem> getCancelledTripsByUser(String email) {
+        return new ArrayList<>();
+    }
+    private List<TripItem> mapCursorToTrips(Cursor cursor) {
+        List<TripItem> list = new ArrayList<>();
+
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                list.add(new TripItem(
+                        cursor.getString(0), // title
+                        cursor.getString(2) != null ? cursor.getString(2) : "Unknown",
+                        cursor.getString(1), // date
+                        "UPCOMING",
+                        cursor.getString(3) != null ? cursor.getString(3) : "0đ",
+                        cursor.getString(4), // image
+                        ""
+                ));
+            } while (cursor.moveToNext());
+
+            cursor.close();
+        }
+
+        return list;
+    }
+    public boolean insertSellerTour(String title,
+                                    String location,
+                                    String duration,
+                                    String price,
+                                    String description,
+                                    String itinerary,
+                                    String included,
+                                    String excluded,
+                                    String imageUrl,
+                                    String startDate,
+                                    String endDate,
+                                    String sellerEmail) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_TITLE, title);
+        values.put(COLUMN_LOCATION, location);
+        values.put(COLUMN_DURATION, duration);
+        values.put(COLUMN_PRICE, price);
+        values.put(COLUMN_DESCRIPTION, description);
+        values.put(COLUMN_ITINERARY, itinerary);
+        values.put(COLUMN_INCLUDED, included);
+        values.put(COLUMN_EXCLUDED, excluded);
+        values.put(COLUMN_IMAGE_RES, 0);
+        values.put(COLUMN_IMAGE_URL, imageUrl);
+        values.put(COLUMN_IMAGE_URLS, imageUrl);
+        values.put(COLUMN_VIDEO_URL, "");
+        values.put(COLUMN_BADGE, "SELLER");
+        values.put(COLUMN_RATING, 0f);
+        values.put(COLUMN_REVIEWS, 0);
+        values.put(COLUMN_BOOK_COUNT, 0);
+        values.put(COLUMN_LATITUDE, 0);
+        values.put(COLUMN_LONGITUDE, 0);
+        values.put(COLUMN_START_DATE, startDate);
+        values.put(COLUMN_END_DATE, endDate);
+        values.put(COLUMN_SELLER_EMAIL, sellerEmail);
+        values.put(COLUMN_TYPE, "Tour");
+
+        long result = db.insert(TABLE_TOURS, null, values);
+        return result != -1;
+    }
+    public List<Tour> getToursBySeller(String sellerEmail) {
+        List<Tour> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Cursor c = db.query(
+                TABLE_TOURS,
+                null,
+                COLUMN_SELLER_EMAIL + " = ?",
+                new String[]{sellerEmail},
+                null,
+                null,
+                COLUMN_ID + " DESC"
+        );
+
+        if (c.moveToFirst()) {
+            do {
+                String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
+                String rawImageUrls = null;
+                int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
+                if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
+
+                Tour tour = new Tour(
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DURATION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_ITINERARY)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_INCLUDED)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_EXCLUDED)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                        imageUrl,
+                        parseImageUrls(rawImageUrls, imageUrl),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_VIDEO_URL)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE)),
+                        c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                        c.getInt(c.getColumnIndexOrThrow(COLUMN_BOOK_COUNT)),
+                        c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
+                        c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE)),
+                        c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE))
+                );
+                tour.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
+                list.add(tour);
+            } while (c.moveToNext());
+        }
+
+        c.close();
+        return list;
+    }
+    public boolean updateSellerTour(int tourId,
+                                    String title,
+                                    String location,
+                                    String duration,
+                                    String price,
+                                    String description,
+                                    String itinerary,
+                                    String included,
+                                    String excluded,
+                                    String imageUrl,
+                                    String startDate,
+                                    String endDate) {
+        SQLiteDatabase db = this.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_TITLE, title);
+        values.put(COLUMN_LOCATION, location);
+        values.put(COLUMN_DURATION, duration);
+        values.put(COLUMN_PRICE, price);
+        values.put(COLUMN_DESCRIPTION, description);
+        values.put(COLUMN_ITINERARY, itinerary);
+        values.put(COLUMN_INCLUDED, included);
+        values.put(COLUMN_EXCLUDED, excluded);
+        values.put(COLUMN_IMAGE_URL, imageUrl);
+        values.put(COLUMN_IMAGE_URLS, imageUrl);
+        values.put(COLUMN_START_DATE, startDate);
+        values.put(COLUMN_END_DATE, endDate);
+
+        int result = db.update(
+                TABLE_TOURS,
+                values,
+                COLUMN_ID + " = ?",
+                new String[]{String.valueOf(tourId)}
+        );
+
+        return result > 0;
+    }
+    public boolean deleteSellerTour(int tourId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        int result = db.delete(TABLE_TOURS, COLUMN_ID + " = ?", new String[]{
+                String.valueOf(tourId)
+        });
+        return result > 0;
     }
 }
