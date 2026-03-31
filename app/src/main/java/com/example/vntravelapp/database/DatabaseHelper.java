@@ -882,227 +882,306 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return count;
     }
 
-    public List<Tour> getRecommendedTours(int limit) {
-        return getToursOrderedBy(COLUMN_TYPE + "=?", new String[]{"Tour"}, "book_count DESC, rating DESC", String.valueOf(limit));
-    }
-
-    public boolean updateUserProfile(String currentEmail, String newEmail, String fullname, String phone) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        if (newEmail != null && !newEmail.isEmpty()) {
-            values.put(COLUMN_EMAIL, newEmail);
-        }
-        values.put(COLUMN_FULLNAME, fullname);
-        values.put(COLUMN_PHONE, phone);
-        int result = db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", new String[]{currentEmail});
-        return result > 0;
-    }
-
-    public boolean updateUserPassword(String email, String oldPassword, String newPassword) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_PASSWORD, newPassword);
-        int result = db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ? AND " + COLUMN_PASSWORD + " = ?", new String[]{email, oldPassword});
-        return result > 0;
-    }
-
-    public void addFavorite(String title, String type) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_TITLE, title);
-        values.put(COLUMN_ITEM_TYPE, type);
-        values.put(COLUMN_CREATED_AT, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
-        db.insertWithOnConflict(TABLE_FAVORITES, null, values, SQLiteDatabase.CONFLICT_REPLACE);
-    }
-
-    public void removeFavorite(String title, String type) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_FAVORITES, COLUMN_TITLE + " = ? AND " + COLUMN_ITEM_TYPE + " = ?", new String[]{title, type});
-    }
-
-    public List<String> getFavoriteTitles(String type) {
-        List<String> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.query(TABLE_FAVORITES, new String[]{COLUMN_TITLE}, COLUMN_ITEM_TYPE + " = ?", new String[]{type}, null, null, null);
-        if (cursor.moveToFirst()) {
+    public List<String> getFavoriteTitles(String itemType) {
+        List<String> titles = new ArrayList<>();
+        Cursor c = getReadableDatabase().rawQuery(
+                "SELECT " + COLUMN_TITLE + " FROM " + TABLE_FAVORITES + " WHERE " + COLUMN_ITEM_TYPE + " = ?",
+                new String[]{itemType}
+        );
+        if (c.moveToFirst()) {
             do {
-                list.add(cursor.getString(0));
-            } while (cursor.moveToNext());
+                titles.add(c.getString(0));
+            } while (c.moveToNext());
         }
-        cursor.close();
-        return list;
+        c.close();
+        return titles;
+    }
+
+    public boolean addFavorite(String title, String itemType) {
+        if (title == null || title.trim().isEmpty()) return false;
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_ITEM_TYPE, itemType);
+        v.put(COLUMN_CREATED_AT, new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date()));
+        long inserted = getWritableDatabase().insertWithOnConflict(TABLE_FAVORITES, null, v, SQLiteDatabase.CONFLICT_IGNORE);
+        return inserted != -1;
+    }
+
+    public boolean removeFavorite(String title, String itemType) {
+        if (title == null || title.trim().isEmpty()) return false;
+        int deleted = getWritableDatabase().delete(TABLE_FAVORITES,
+                COLUMN_TITLE + " = ? AND " + COLUMN_ITEM_TYPE + " = ?",
+                new String[]{title, itemType}
+        );
+        return deleted > 0;
     }
 
     public List<FavoriteItem> getFavoriteItems() {
-        List<FavoriteItem> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-
-        // Fetch Tours that are favorites
-        String tourQuery = "SELECT f." + COLUMN_TITLE + ", t." + COLUMN_LOCATION + ", t." + COLUMN_IMAGE_URL + ", f." + COLUMN_ITEM_TYPE + ", t." + COLUMN_ID +
-                " FROM " + TABLE_FAVORITES + " f JOIN " + TABLE_TOURS + " t ON f." + COLUMN_TITLE + " = t." + COLUMN_TITLE +
-                " WHERE f." + COLUMN_ITEM_TYPE + " = 'Tour'";
-        Cursor c1 = db.rawQuery(tourQuery, null);
-        if (c1 != null) {
-            if (c1.moveToFirst()) {
-                do {
-                    list.add(new FavoriteItem(c1.getInt(4), c1.getString(0), c1.getString(1), c1.getString(2), c1.getString(3)));
-                } while (c1.moveToNext());
-            }
-            c1.close();
-        }
-
-        // Fetch Hotels that are favorites
-        String hotelQuery = "SELECT f." + COLUMN_TITLE + ", h." + COLUMN_LOCATION + ", h." + COLUMN_IMAGE_URL + ", f." + COLUMN_ITEM_TYPE + ", h." + COLUMN_ID +
-                " FROM " + TABLE_FAVORITES + " f JOIN " + TABLE_HOTELS + " h ON f." + COLUMN_TITLE + " = h." + COLUMN_TITLE +
-                " WHERE f." + COLUMN_ITEM_TYPE + " = 'Hotel'";
-        Cursor c2 = db.rawQuery(hotelQuery, null);
-        if (c2 != null) {
-            if (c2.moveToFirst()) {
-                do {
-                    list.add(new FavoriteItem(c2.getInt(4), c2.getString(0), c2.getString(1), c2.getString(2), c2.getString(3)));
-                } while (c2.moveToNext());
-            }
-            c2.close();
-        }
-
-        return list;
-    }
-
-    public Tour getTourByTitle(String title) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(TABLE_TOURS, null, COLUMN_TITLE + " = ?", new String[]{title}, null, null, null);
-        Tour tour = null;
+        List<FavoriteItem> items = new ArrayList<>();
+        String sql = "SELECT f.item_type, " +
+                "t.id, t.title, t.location, t.image_url, " +
+                "h.id, h.title, h.location, h.image_url " +
+                "FROM " + TABLE_FAVORITES + " f " +
+                "LEFT JOIN " + TABLE_TOURS + " t ON f.title = t.title AND f.item_type = 'Tour' " +
+                "LEFT JOIN " + TABLE_HOTELS + " h ON f.title = h.title AND f.item_type = 'Hotel' " +
+                "ORDER BY f.created_at DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, null);
         if (c.moveToFirst()) {
-            String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
-            String rawImageUrls = null;
-            int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
-            if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
+            do {
+                String type = c.getString(0);
+                int tourId = c.getInt(1);
+                String tourTitle = c.getString(2);
+                String tourLocation = c.getString(3);
+                String tourImage = c.getString(4);
+                int hotelId = c.getInt(5);
+                String hotelTitle = c.getString(6);
+                String hotelLocation = c.getString(7);
+                String hotelImage = c.getString(8);
 
-            tour = new Tour(
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DURATION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_ITINERARY)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_INCLUDED)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_EXCLUDED)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
-                    imageUrl,
-                    parseImageUrls(rawImageUrls, imageUrl),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_VIDEO_URL)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE)),
-                    c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_BOOK_COUNT)),
-                    c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
-                    c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE))
-            );
-            tour.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
-            int typeIndex = c.getColumnIndex(COLUMN_TYPE);
-            if (typeIndex >= 0) tour.setType(c.getString(typeIndex));
+                if ("Hotel".equals(type)) {
+                    if (hotelTitle == null) continue;
+                    items.add(new FavoriteItem(hotelId, hotelTitle,
+                            hotelLocation == null ? "" : hotelLocation,
+                            hotelImage == null ? "" : hotelImage,
+                            type));
+                } else {
+                    if (tourTitle == null) continue;
+                    items.add(new FavoriteItem(tourId, tourTitle,
+                            tourLocation == null ? "" : tourLocation,
+                            tourImage == null ? "" : tourImage,
+                            type));
+                }
+            } while (c.moveToNext());
         }
         c.close();
-        return tour;
+        return items;
     }
 
-    public Hotel getHotelByTitle(String title) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(TABLE_HOTELS, null, COLUMN_TITLE + " = ?", new String[]{title}, null, null, null);
-        Hotel hotel = null;
-        if (c.moveToFirst()) {
-            hotel = new Hotel(
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
-                    c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
-                    c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
-                    c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE))
-            );
-            hotel.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
+    public List<MapItem> getAllMapItems() {
+        List<MapItem> mapItems = new ArrayList<>();
+        for (Tour tour : getAllTours()) {
+            mapItems.add(MapItem.fromTour(tour));
         }
-        c.close();
-        return hotel;
+        for (Hotel hotel : getAllHotels()) {
+            mapItems.add(MapItem.fromHotel(hotel));
+        }
+        return mapItems;
     }
 
     public Tour getTourById(int id) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(TABLE_TOURS, null, COLUMN_ID + " = ?", new String[]{String.valueOf(id)}, null, null, null);
-        Tour tour = null;
-        if (c.moveToFirst()) {
-            String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
-            String rawImageUrls = null;
-            int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
-            if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
-
-            tour = new Tour(
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DURATION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_ITINERARY)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_INCLUDED)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_EXCLUDED)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
-                    imageUrl,
-                    parseImageUrls(rawImageUrls, imageUrl),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_VIDEO_URL)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE)),
-                    c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_BOOK_COUNT)),
-                    c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
-                    c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE))
-            );
-            tour.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
-            int typeIndex = c.getColumnIndex(COLUMN_TYPE);
-            if (typeIndex >= 0) tour.setType(c.getString(typeIndex));
+        Cursor c = getReadableDatabase().query(TABLE_TOURS, null, COLUMN_ID + " = ?",
+                new String[]{String.valueOf(id)}, null, null, null, "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            return null;
+        }
+        String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
+        String rawImageUrls = null;
+        int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
+        if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
+        Tour tour = new Tour(
+                c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DURATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_ITINERARY)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_INCLUDED)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_EXCLUDED)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                imageUrl,
+                parseImageUrls(rawImageUrls, imageUrl),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_VIDEO_URL)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE)),
+                c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_BOOK_COUNT)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE))
+        );
+        tour.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
+        int typeIndex = c.getColumnIndex(COLUMN_TYPE);
+        if (typeIndex >= 0) {
+            tour.setType(c.getString(typeIndex));
         }
         c.close();
         return tour;
     }
 
     public Hotel getHotelById(int id) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor c = db.query(TABLE_HOTELS, null, COLUMN_ID + " = ?", new String[]{String.valueOf(id)}, null, null, null);
-        Hotel hotel = null;
-        if (c.moveToFirst()) {
-            hotel = new Hotel(
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
-                    c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
-                    c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
-                    c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
-                    c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
-                    c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE))
-            );
-            hotel.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
+        Cursor c = getReadableDatabase().query(TABLE_HOTELS, null, COLUMN_ID + " = ?",
+                new String[]{String.valueOf(id)}, null, null, null, "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            return null;
         }
+        Hotel hotel = new Hotel(
+                c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
+                c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE))
+        );
+        hotel.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
         c.close();
         return hotel;
     }
 
-    public List<MapItem> getAllMapItems() {
-        List<MapItem> items = new ArrayList<>();
-        for (Tour tour : getAllTours()) {
-            items.add(MapItem.fromTour(tour));
+    public Tour getTourByTitle(String title) {
+        if (title == null || title.trim().isEmpty()) return null;
+        Cursor c = getReadableDatabase().query(TABLE_TOURS, null, COLUMN_TITLE + " = ?",
+                new String[]{title}, null, null, null, "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            return null;
         }
-        for (Hotel hotel : getAllHotels()) {
-            items.add(MapItem.fromHotel(hotel));
+        String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
+        String rawImageUrls = null;
+        int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
+        if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
+        Tour tour = new Tour(
+                c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DURATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_ITINERARY)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_INCLUDED)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_EXCLUDED)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                imageUrl,
+                parseImageUrls(rawImageUrls, imageUrl),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_VIDEO_URL)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE)),
+                c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_BOOK_COUNT)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE))
+        );
+        tour.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
+        int typeIndex = c.getColumnIndex(COLUMN_TYPE);
+        if (typeIndex >= 0) {
+            tour.setType(c.getString(typeIndex));
         }
-        return items;
+        c.close();
+        return tour;
+    }
+
+    public Hotel getHotelByTitle(String title) {
+        if (title == null || title.trim().isEmpty()) return null;
+        Cursor c = getReadableDatabase().query(TABLE_HOTELS, null, COLUMN_TITLE + " = ?",
+                new String[]{title}, null, null, null, "1");
+        if (!c.moveToFirst()) {
+            c.close();
+            return null;
+        }
+        Hotel hotel = new Hotel(
+                c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
+                c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL)),
+                c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
+                c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
+                c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE))
+        );
+        hotel.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
+        c.close();
+        return hotel;
+    }
+
+    public boolean updateUserProfile(String oldEmail, String newEmail, String fullname, String phone) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        if (newEmail != null && !newEmail.trim().isEmpty()) values.put(COLUMN_EMAIL, newEmail.trim());
+        if (fullname != null) values.put(COLUMN_FULLNAME, fullname.trim());
+        if (phone != null) values.put(COLUMN_PHONE, phone.trim());
+        int updated = db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", new String[]{oldEmail});
+        return updated > 0;
+    }
+
+    public boolean updateUserPassword(String email, String oldPassword, String newPassword) {
+        if (email == null || oldPassword == null || newPassword == null) return false;
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT " + COLUMN_PASSWORD + " FROM " + TABLE_USERS + " WHERE " + COLUMN_EMAIL + " = ?",
+                new String[]{email});
+        try {
+            if (!cursor.moveToFirst()) return false;
+            String current = cursor.getString(0);
+            if (!oldPassword.equals(current)) return false;
+        } finally {
+            cursor.close();
+        }
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PASSWORD, newPassword);
+        return db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", new String[]{email}) > 0;
+    }
+
+    public List<Tour> getRecommendedTours(int limit) {
+        int safeLimit = Math.max(4, Math.min(12, limit));
+        return getToursOrderedBy(COLUMN_TYPE + "=?", new String[]{"Tour"}, "book_count DESC, rating DESC", String.valueOf(safeLimit));
+    }
+
+    public List<com.example.vntravelapp.models.ReviewEntry> getReviewEntries() {
+        List<com.example.vntravelapp.models.ReviewEntry> list = new ArrayList<>();
+        Cursor c = getReadableDatabase().query(TABLE_REVIEWS, null, null, null, null, null, COLUMN_CREATED_AT + " DESC");
+        if (c.moveToFirst()) {
+            do {
+                String itemType = c.getString(c.getColumnIndexOrThrow(COLUMN_ITEM_TYPE));
+                String itemTitle = c.getString(c.getColumnIndexOrThrow(COLUMN_ITEM_TITLE));
+                float rating = c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING));
+                String content = c.getString(c.getColumnIndexOrThrow(COLUMN_CONTENT));
+                String createdAt = c.getString(c.getColumnIndexOrThrow(COLUMN_CREATED_AT));
+                list.add(new com.example.vntravelapp.models.ReviewEntry(itemType, itemTitle, rating, content, createdAt));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public List<com.example.vntravelapp.models.JournalEntry> getJournalEntries() {
+        List<com.example.vntravelapp.models.JournalEntry> list = new ArrayList<>();
+        Cursor c = getReadableDatabase().query(TABLE_JOURNAL, null, null, null, null, null, COLUMN_CREATED_AT + " DESC");
+        if (c.moveToFirst()) {
+            do {
+                String title = c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE));
+                String content = c.getString(c.getColumnIndexOrThrow(COLUMN_CONTENT));
+                String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
+                float rating = c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING));
+                String createdAt = c.getString(c.getColumnIndexOrThrow(COLUMN_CREATED_AT));
+                list.add(new com.example.vntravelapp.models.JournalEntry(title, content, imageUrl, rating, createdAt));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public List<com.example.vntravelapp.models.NotificationItem> getNotifications() {
+        List<com.example.vntravelapp.models.NotificationItem> list = new ArrayList<>();
+        Cursor c = getReadableDatabase().query(TABLE_NOTIFICATIONS, null, null, null, null, null, COLUMN_CREATED_AT + " DESC");
+        if (c.moveToFirst()) {
+            do {
+                String title = c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE));
+                String content = c.getString(c.getColumnIndexOrThrow(COLUMN_CONTENT));
+                String status = c.getString(c.getColumnIndexOrThrow(COLUMN_STATUS));
+                String createdAt = c.getString(c.getColumnIndexOrThrow(COLUMN_CREATED_AT));
+                list.add(new com.example.vntravelapp.models.NotificationItem(title, content, status, createdAt));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
     }
 
     public List<TripItem> getUpcomingTrips() {
@@ -1119,7 +1198,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         String currentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
         String query;
-        if (status.equals("upcoming")) {
+        if ("upcoming".equals(status)) {
             query = "SELECT o.title, o.date, t.location, t.price, t.image_url FROM " + TABLE_ORDERS + " o " +
                     "LEFT JOIN " + TABLE_TOURS + " t ON o.title = t.title " +
                     "WHERE o.date >= ?";
@@ -1136,7 +1215,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                         c.getString(0),
                         c.getString(2) != null ? c.getString(2) : "Unknown",
                         c.getString(1),
-                        status.toUpperCase(),
+                        status.toUpperCase(Locale.ROOT),
                         c.getString(3) != null ? c.getString(3) : "0đ",
                         c.getString(4),
                         ""
@@ -1190,7 +1269,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void cancelTrip(String title, String date, String reason) {
         SQLiteDatabase db = this.getWritableDatabase();
-        @SuppressWarnings("unused")
         ContentValues v = new ContentValues();
         v.put(COLUMN_TITLE, title);
         v.put(COLUMN_DATE_RANGE, date);

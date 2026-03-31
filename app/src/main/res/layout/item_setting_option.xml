@@ -10,20 +10,19 @@
     android:paddingHorizontal="16dp">
 
     <com.google.android.material.card.MaterialCardView
-        android:id="@+id/iconContainer"
+        android:id="@+id/cardSettingIcon"
         android:layout_width="38dp"
         android:layout_height="38dp"
         android:layout_centerVertical="true"
         app:cardCornerRadius="19dp"
         app:cardElevation="0dp"
-        app:strokeWidth="0dp"
         app:cardBackgroundColor="@color/profile_accent_soft">
         <ImageView
-            android:id="@+id/ivOptionIcon"
+            android:id="@+id/ivSettingIcon"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:padding="9dp"
-            android:src="@drawable/ic_profile_favorite"
+            android:src="@drawable/ic_profile_settings"
             app:tint="@color/profile_accent"/>
     </com.google.android.material.card.MaterialCardView>
 
@@ -31,22 +30,22 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:layout_toEndOf="@id/iconContainer"
+        android:layout_toEndOf="@id/cardSettingIcon"
         android:layout_marginStart="14dp"
         android:layout_centerVertical="true">
         <TextView
-            android:id="@+id/tvOptionTitle"
+            android:id="@+id/tvSettingTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Yêu thích"
+            android:text="Cài đặt"
             android:textSize="15sp"
             android:textStyle="bold"
             android:textColor="@color/profile_text_primary"/>
         <TextView
-            android:id="@+id/tvOptionSub"
+            android:id="@+id/tvSettingSub"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="12 tour"
+            android:text="Tùy chỉnh giao diện"
             android:textSize="12sp"
             android:textColor="@color/profile_text_secondary"/>
     </LinearLayout>
@@ -60,3 +59,4 @@
         app:tint="@color/profile_text_muted"/>
 
 </RelativeLayout>
+

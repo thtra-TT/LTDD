@@ -9,4 +9,15 @@
     <color name="traveloka_blue">#0D6EFD</color>
     <color name="primary_color">#007BFF</color>
     <color name="primary_container">#D6E9FF</color>
+
+    <color name="profile_bg">#F4F7FB</color>
+    <color name="profile_surface">#FFFFFF</color>
+    <color name="profile_text_primary">#1C2430</color>
+    <color name="profile_text_secondary">#667085</color>
+    <color name="profile_text_muted">#98A2B3</color>
+    <color name="profile_divider">#EEF1F5</color>
+    <color name="profile_accent">#2F80ED</color>
+    <color name="profile_accent_soft">#E6F0FF</color>
+    <color name="profile_badge_green">#E6F7EC</color>
+    <color name="profile_badge_orange">#FFF3E6</color>
 </resources>
