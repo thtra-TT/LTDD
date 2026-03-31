@@ -70,18 +70,16 @@ public class HomeFragment extends Fragment {
         // Setup Categories
         setupCategory(view.findViewById(R.id.catTour), "Tour", android.R.drawable.ic_menu_directions);
         setupCategory(view.findViewById(R.id.catHotel), "Khách sạn", android.R.drawable.ic_menu_myplaces);
-        setupCategory(view.findViewById(R.id.catTicket), "Vé", android.R.drawable.ic_menu_agenda);
         setupCategory(view.findViewById(R.id.catCombo), "Combo", android.R.drawable.ic_menu_save);
 
         // Click Listeners
         view.findViewById(R.id.catHotel).setOnClickListener(v -> switchFragment(new HotelFragment()));
-        view.findViewById(R.id.catTicket).setOnClickListener(v -> switchFragment(new TicketFragment()));
         view.findViewById(R.id.catCombo).setOnClickListener(v -> switchFragment(new ComboFragment()));
 
         // Data Loading
         allTours = dbHelper.getAllTours(); // Chỉ lấy type = 'Tour'
         popularTours = dbHelper.getPopularTours();
-        allDestinations = dbHelper.getAllDestinations(); // Lấy type = 'Destination' (TP.HCM)
+        allDestinations = dbHelper.getAllDestinations(); // Lấy type = 'Destination'
 
         // Setup Main RecyclerView (All Tours)
         rvResults.setLayoutManager(new LinearLayoutManager(getContext()));
@@ -137,7 +135,6 @@ public class HomeFragment extends Fragment {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 getLastLocation();
             } else {
-                // Nếu từ chối quyền, vẫn hiển thị các điểm tại TP.HCM mặc định
                 getLastLocation();
             }
         }
@@ -169,9 +166,7 @@ public class HomeFragment extends Fragment {
 
     private void updateNearYouTours(Location userLocation) {
         List<Tour> nearbyDestinations = new ArrayList<>();
-        boolean isTrulyNear = false;
         
-        // Duyệt qua danh sách Destinations
         for (Tour dest : allDestinations) {
             if (dest.getLatitude() == 0 && dest.getLongitude() == 0) continue;
             
@@ -179,20 +174,15 @@ public class HomeFragment extends Fragment {
             Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(), 
                                    dest.getLatitude(), dest.getLongitude(), results);
             
-            // 500km để được coi là "gần bạn"
             if (results[0] <= 500000) {
                 nearbyDestinations.add(dest);
-                isTrulyNear = true;
             }
         }
 
-        // Nếu không có địa điểm nào trong bán kính 500km, hiển thị tất cả destinations có sẵn (fallback)
         if (nearbyDestinations.isEmpty() && !allDestinations.isEmpty()) {
             nearbyDestinations.addAll(allDestinations);
-            isTrulyNear = false;
         }
 
-        // Sắp xếp theo khoảng cách
         Collections.sort(nearbyDestinations, (t1, t2) -> {
             float[] d1 = new float[1];
             Location.distanceBetween(userLocation.getLatitude(), userLocation.getLongitude(), t1.getLatitude(), t1.getLongitude(), d1);
@@ -208,11 +198,7 @@ public class HomeFragment extends Fragment {
             rvNearYou.setVisibility(View.VISIBLE);
             nearYouAdapter.updateData(nearYouTours);
             if (tvNearYouTitle != null) {
-                if (isTrulyNear) {
-                    tvNearYouTitle.setText("📍 Điểm du lịch gần bạn gần bạn");
-                } else {
-                    tvNearYouTitle.setText("📍 Điểm du lịch gần bạn gần bạn");
-                }
+                tvNearYouTitle.setText("📍 Điểm du lịch gần bạn");
             }
         } else {
             rlNearYouHeader.setVisibility(View.GONE);
