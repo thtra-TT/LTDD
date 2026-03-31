@@ -96,6 +96,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String COLUMN_ROLE = "role";
 
+    private static final String COLUMN_ORDER_STATUS = "order_status";
     private static final Map<String, double[]> LOCATION_COORDINATES = buildLocationCoordinates();
 
     public DatabaseHelper(Context context) {
@@ -198,7 +199,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "people INTEGER, " +
                 "name TEXT, " +
                 "phone TEXT, " +
-                COLUMN_USER_EMAIL + " TEXT" +
+                COLUMN_USER_EMAIL + " TEXT, " +
+                COLUMN_ORDER_STATUS + " TEXT DEFAULT 'PENDING'" +
                 ")");
         seedData(db);
     }
@@ -859,6 +861,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put("name", name);
         values.put("phone", phone);
         values.put("user_email", userEmail);
+        values.put(COLUMN_ORDER_STATUS, "PENDING");
         return db.insert(TABLE_ORDERS, null, values) != -1;
     }
 
@@ -1519,6 +1522,37 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int result = db.delete(TABLE_TOURS, COLUMN_ID + " = ?", new String[]{
                 String.valueOf(tourId)
         });
+        return result > 0;
+    }
+    public Cursor getAllOrdersForSeller() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT id, title, date, people, name, phone, user_email, order_status " +
+                        "FROM orders ORDER BY id DESC",
+                null
+        );
+    }
+    public boolean cancelOrder(int orderId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_ORDER_STATUS, "CANCELLED");        int result = db.update("orders", values, "id = ?", new String[]{String.valueOf(orderId)});
+        return result > 0;
+    }
+    public Cursor getSellerTourStats() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery(
+                "SELECT title, COUNT(*) as total_orders " +
+                        "FROM orders " +
+                        "GROUP BY title " +
+                        "ORDER BY total_orders DESC",
+                null
+        );
+    }
+    public boolean confirmOrder(int orderId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_ORDER_STATUS, "CONFIRMED");
+        int result = db.update(TABLE_ORDERS, values, COLUMN_ID + " = ?", new String[]{String.valueOf(orderId)});
         return result > 0;
     }
 }

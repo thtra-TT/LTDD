@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F2F6FF">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="#FFFFFF"
+        android:elevation="4dp">
+
+        <TextView
+            android:id="@+id/tvSellerTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Quản lý đơn đặt tour"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#1A2A4A" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Theo dõi đơn hàng và thống kê tour"
+            android:textSize="12sp"
+            android:textColor="#7A8FAF" />
+    </LinearLayout>
+
+    <!-- Stats title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="Thống kê tour"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#1A2A4A" />
+
+    <!-- Stats list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSellerStats"
+        android:layout_width="match_parent"
+        android:layout_height="140dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never" />
+
+    <!-- Orders title -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp"
+        android:text="Danh sách đơn đặt"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#1A2A4A" />
+
+    <!-- Orders list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvSellerOrders"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="16dp"
+        android:clipToPadding="false"
+        android:overScrollMode="never" />
+
+</LinearLayout>

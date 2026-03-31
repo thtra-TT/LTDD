@@ -13,11 +13,13 @@ import com.example.vntravelapp.fragments.MapFragment;
 import com.example.vntravelapp.fragments.ProfileFragment;
 import com.example.vntravelapp.fragments.TripFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.example.vntravelapp.fragments.SellerDashboardFragment;
 
 public class HomeActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNav;
     private int pendingTripTab = -1;
+    private String role;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +32,9 @@ public class HomeActivity extends AppCompatActivity {
         String role = pref.getString("saved_role", "BUYER");
 
         if ("SELLER".equals(role)) {
-            bottomNav.getMenu().findItem(R.id.nav_trip).setVisible(false);
+            bottomNav.getMenu().findItem(R.id.nav_trip).setTitle("Quản lý");
+        } else {
+            bottomNav.getMenu().findItem(R.id.nav_trip).setTitle("Chuyến đi");
         }
 
         if (savedInstanceState == null) {
@@ -48,23 +52,18 @@ public class HomeActivity extends AppCompatActivity {
                 selectedFragment = new MapFragment();
 
             } else if (id == R.id.nav_trip) {
-                SharedPreferences tripPref = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-                String tripRole = tripPref.getString("saved_role", "BUYER");
-
-                if ("SELLER".equals(tripRole)) {
-                    Toast.makeText(this, "Người bán không có mục chuyến đi", Toast.LENGTH_SHORT).show();
-                    return false;
+                if ("SELLER".equals(role)) {
+                    selectedFragment = new SellerDashboardFragment();
+                } else {
+                    TripFragment tripFragment = new TripFragment();
+                    if (pendingTripTab >= 0) {
+                        Bundle args = new Bundle();
+                        args.putInt(TripFragment.ARG_INITIAL_TAB, pendingTripTab);
+                        tripFragment.setArguments(args);
+                        pendingTripTab = -1;
+                    }
+                    selectedFragment = tripFragment;
                 }
-
-                TripFragment tripFragment = new TripFragment();
-                if (pendingTripTab >= 0) {
-                    Bundle args = new Bundle();
-                    args.putInt(TripFragment.ARG_INITIAL_TAB, pendingTripTab);
-                    tripFragment.setArguments(args);
-                    pendingTripTab = -1;
-                }
-                selectedFragment = tripFragment;
-
             } else if (id == R.id.nav_profile) {
                 selectedFragment = new ProfileFragment();
             }
@@ -99,6 +98,7 @@ public class HomeActivity extends AppCompatActivity {
         if (fragment instanceof HomeFragment
                 || fragment instanceof MapFragment
                 || fragment instanceof TripFragment
+                || fragment instanceof SellerDashboardFragment
                 || fragment instanceof ProfileFragment) {
             bottomNav.setVisibility(View.VISIBLE);
         } else {
