@@ -26,5 +26,19 @@
         android:textStyle="bold"
         android:textColor="@color/profile_text_primary" />
 
-</LinearLayout>
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
+    <TextView
+        android:id="@+id/tvToolbarAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:textColor="@color/profile_accent"
+        android:visibility="gone" />
+
+</LinearLayout>

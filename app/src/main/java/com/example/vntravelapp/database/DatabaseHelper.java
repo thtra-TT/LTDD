@@ -27,7 +27,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     private static final String TAG = "DatabaseHelper";
     private static final String DATABASE_NAME = "vntravel.db";
-    private static final int DATABASE_VERSION = 51; // Bumped version for type separation
+    private static final int DATABASE_VERSION = 56; // Add comments + travel diary tables
     private static final String FALLBACK_TOUR_IMAGE = "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1400&q=80";
 
     private static final String TABLE_TOURS = "tours";
@@ -42,6 +42,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TABLE_NOTIFICATIONS = "notifications";
     private static final String TABLE_CANCELLED_TRIPS = "trip_cancellations";
     private static final String TABLE_BUS_TRIPS = "bus_trips";
+    private static final String TABLE_COMMENTS = "comments";
+    private static final String TABLE_TRAVEL_DIARY = "travel_diary";
 
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_TITLE = "title";
@@ -82,6 +84,9 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_START_DATE = "start_date";
     private static final String COLUMN_END_DATE = "end_date";
     private static final String COLUMN_USER_EMAIL = "user_email";
+    private static final String COLUMN_USER_ID = "user_id";
+    private static final String COLUMN_TOUR_ID = "tour_id";
+    private static final String COLUMN_UPDATED_AT = "updated_at";
 
     private static final String ROLE_BUYER = "BUYER";
     private static final String ROLE_SELLER = "SELLER";
@@ -101,6 +106,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+    }
+
+    @Override
+    public void onOpen(SQLiteDatabase db) {
+        super.onOpen(db);
+        db.execSQL("PRAGMA foreign_keys=ON");
+        ensureSeedUsers(db);
     }
 
     @Override
@@ -182,6 +194,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_TITLE + " TEXT, " +
                 COLUMN_DATE_RANGE + " TEXT, " +
                 COLUMN_REASON + " TEXT, " +
+                COLUMN_USER_EMAIL + " TEXT, " +
                 COLUMN_CREATED_AT + " TEXT) ");
         db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_BUS_TRIPS + " (" +
                 COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
@@ -202,15 +215,35 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 COLUMN_USER_EMAIL + " TEXT, " +
                 COLUMN_ORDER_STATUS + " TEXT DEFAULT 'PENDING'" +
                 ")");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_COMMENTS + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_TOUR_ID + " INTEGER, " +
+                COLUMN_USER_ID + " INTEGER, " +
+                COLUMN_RATING + " REAL, " +
+                COLUMN_CONTENT + " TEXT, " +
+                COLUMN_CREATED_AT + " TEXT, " +
+                COLUMN_UPDATED_AT + " TEXT, " +
+                "FOREIGN KEY(" + COLUMN_TOUR_ID + ") REFERENCES " + TABLE_TOURS + "(" + COLUMN_ID + "), " +
+                "FOREIGN KEY(" + COLUMN_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_ID + "))");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE_TRAVEL_DIARY + " (" +
+                COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                COLUMN_USER_ID + " INTEGER, " +
+                COLUMN_TOUR_ID + " INTEGER, " +
+                COLUMN_TITLE + " TEXT, " +
+                COLUMN_CONTENT + " TEXT, " +
+                COLUMN_IMAGE_URL + " TEXT, " +
+                COLUMN_RATING + " REAL, " +
+                COLUMN_CREATED_AT + " TEXT, " +
+                COLUMN_UPDATED_AT + " TEXT, " +
+                "FOREIGN KEY(" + COLUMN_TOUR_ID + ") REFERENCES " + TABLE_TOURS + "(" + COLUMN_ID + "), " +
+                "FOREIGN KEY(" + COLUMN_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_ID + "))");
         seedData(db);
     }
 
     private void seedData(SQLiteDatabase db) {
-        String VIDEO_1 = "https://www.w3schools.com/html/mov_bbb.mp4";
-        String VIDEO_2 = "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4";
-        String VIDEO_3 = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4";
-        String VIDEO_4 = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4";
-        String VIDEO_5 = "https://storage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4";
+        String VIDEO_HA_LONG = "https://res.cloudinary.com/dgiu7ewoy/video/upload/v1774972489/ng%E1%BA%AFn_v%E1%BB%81_c%E1%BA%A3nh_%C4%91%E1%BA%B9p_h%E1%BA%A1_long_-_T%C3%ACm_tr%C3%AAn_Google_kfbyq5.mp4";
+        String VIDEO_HUE = "https://res.cloudinary.com/dgiu7ewoy/video/upload/v1774972511/N%E1%BA%BFu_c%E1%BA%A3_%C4%91%E1%BB%9Di_n%C3%A0y_kh%C3%B4ng_r%E1%BB%B1c_r%E1%BB%9B_th%C3%AC_sao---_Th%C3%AC_%C4%91i_Hu%E1%BA%BF_Th%C3%A1ng_3_-_Hu%E1%BA%BF_%C4%91ang_v%C3%A0o_m%C3%B9a_%C4%91%E1%BA%B9p_r%E1%BB%B1c_r%E1%BB%9B_nh%E1%BA%A5t_trong_n%C4%83m_u6h7zx.mp4";
+        String VIDEO_HON_SON = "https://res.cloudinary.com/dgiu7ewoy/video/upload/v1774972502/T%E1%BB%95ng_h%E1%BB%A3p_c%C3%A1c_%C4%91i%E1%BB%83m_check_in_H%C3%B2n_S%C6%A1n_-_An_Giang_Ki%C3%AAn_Giang_c%C5%A9_cho_h%E1%BB%87_th%C3%ADch_chill_v%E1%BB%9Bi_bi%E1%BB%83n_cqwkq1.mp4";
 
         // =========================
         // TOURS
@@ -220,14 +253,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Quảng Ninh",
                 "2N1Đ",
                 "2.990.000đ",
-                "Khám phá kỳ quan thiên nhiên thế giới.",
-                "Ngày 1: Hà Nội → Hạ Long → Check-in du thuyền\nNgày 2: Hang Sửng Sốt → Kayak → Hà Nội",
-                "Xe đưa đón\nKhách sạn 3*\nĂn 3 bữa\nVé tham quan",
+                "Vịnh Hạ Long là kỳ quan thiên nhiên thế giới, nơi hàng nghìn đảo đá vươn lên giữa làn nước xanh ngọc. Tour này dành cho những ai muốn thật sự “chạm” vào vẻ đẹp của vịnh: ngủ đêm trên du thuyền, ngắm hoàng hôn rót vàng trên mặt biển, hít hà mùi mặn của gió và nghe tiếng sóng lách tách dưới mạn tàu. Điểm khác biệt của tour là trải nghiệm đêm trên vịnh kết hợp hoạt động kayak và tiệc sunset, giúp bạn cảm nhận trọn vẹn nhịp sống vịnh Hạ Long theo cách chậm rãi và sang trọng.",
+                "Ngày 1: Hà Nội - Hạ Long - Du thuyền\n" +
+                        "07:00 Đón tại Hà Nội, khởi hành đi Hạ Long theo cao tốc.\n" +
+                        "10:30 Đến cảng, làm thủ tục lên du thuyền, nhận phòng.\n" +
+                        "12:30 Ăn trưa hải sản trên tàu, ngắm đảo đá kỳ vĩ.\n" +
+                        "14:30 Tham quan Hang Sửng Sốt, chụp ảnh toàn cảnh vịnh.\n" +
+                        "16:00 Chèo kayak tại Hang Luồn hoặc tắm biển Titop.\n" +
+                        "17:30 Tiệc sunset, ngắm hoàng hôn trên boong tàu.\n" +
+                        "19:00 Ăn tối, thưởng thức hải sản đặc sản.\n" +
+                        "21:00 Câu mực đêm, thư giãn trên boong, nghỉ đêm.\n" +
+                        "Ngày 2: Bình minh - Trở về\n" +
+                        "06:00 Đón bình minh, trà/cafe sáng trên boong.\n" +
+                        "07:00 Tập Tai Chi nhẹ nhàng, hít thở không khí biển.\n" +
+                        "08:00 Tham quan hang nhỏ, chụp ảnh check-in.\n" +
+                        "09:30 Brunch nhẹ, làm thủ tục trả phòng.\n" +
+                        "11:30 Cập bến, lên xe về Hà Nội.\n" +
+                        "15:30 Kết thúc tour tại điểm đón.",
+                "Xe đưa đón\nDu thuyền ngủ đêm\nĂn 3 bữa\nVé tham quan\nKayak",
                 "Chi phí cá nhân\nĐồ uống\nTip HDV",
                 0,
                 "https://images.unsplash.com/photo-1643029891412-92f9a81a8c16?q=80&w=1486&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
                 "https://images.unsplash.com/photo-1643029891412-92f9a81a8c16?q=80&w=1486&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-                VIDEO_1,
+                VIDEO_HA_LONG + "|" + VIDEO_HON_SON,
                 "HOT",
                 4.8f,
                 150,
@@ -242,16 +290,31 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Quảng Nam",
                 "3N2Đ",
                 "3.500.000đ",
-                "Khám phá phố cổ lung linh đèn lồng và văn hóa đặc trưng miền Trung.",
-                "Ngày 1: Đà Nẵng → Hội An → Check-in phố cổ\n" +
-                        "Ngày 2: Tham quan Chùa Cầu, làng gốm Thanh Hà\n" +
-                        "Ngày 3: Tự do mua sắm → về",
+                "Hội An là nơi thời gian như chậm lại giữa những mái ngói rêu phong và ánh đèn lồng lung linh. Bạn sẽ đi bộ qua những con hẻm nhỏ, nghe mùi cao lầu thơm nức, ngồi bên sông Hoài thả hoa đăng và cảm nhận nhịp sống bình yên hiếm có. Điểm nổi bật của tour là kết hợp văn hóa di sản với trải nghiệm làng nghề và biển An Bàng, giúp chuyến đi vừa sâu sắc vừa thư giãn.",
+                "Ngày 1: Đà Nẵng - Hội An\n" +
+                        "08:00 Đón tại Đà Nẵng, di chuyển về Hội An.\n" +
+                        "10:30 Nhận phòng khách sạn, nghỉ ngơi nhẹ.\n" +
+                        "12:00 Ăn trưa với cao lầu, mì Quảng.\n" +
+                        "15:00 Tham quan Chùa Cầu, nhà cổ Tấn Ký, hội quán Phúc Kiến.\n" +
+                        "18:30 Dạo phố đèn lồng, thả hoa đăng trên sông Hoài.\n" +
+                        "20:00 Tự do thưởng thức ẩm thực đường phố.\n" +
+                        "Ngày 2: Làng nghề - Biển An Bàng\n" +
+                        "07:30 Ăn sáng, khởi hành đi làng gốm Thanh Hà.\n" +
+                        "09:30 Trải nghiệm làm gốm, chụp ảnh check-in.\n" +
+                        "11:00 Thăm làng rau Trà Quế, thử làm nông dân.\n" +
+                        "12:30 Ăn trưa với món đặc sản địa phương.\n" +
+                        "15:00 Tắm biển An Bàng, nghỉ ngơi tự do.\n" +
+                        "19:00 Xem show Ký Ức Hội An hoặc dạo chợ đêm.\n" +
+                        "Ngày 3: Hội An - Mua sắm - Trở về\n" +
+                        "08:00 Café phố cổ, mua quà lưu niệm.\n" +
+                        "10:30 Trả phòng, lên xe về Đà Nẵng.\n" +
+                        "12:00 Kết thúc tour.",
                 "Xe đưa đón\nKhách sạn 3*\nĂn sáng\nVé tham quan",
                 "Chi phí cá nhân\nĂn trưa & tối\nTip HDV",
                 0,
                 "https://res.cloudinary.com/dzjlcbwwh/image/upload/v1773591709/4b0d87f2-f7e3-48c5-9496-ad7c04c99379.png",
                 "https://res.cloudinary.com/dzjlcbwwh/image/upload/v1773591709/4b0d87f2-f7e3-48c5-9496-ad7c04c99379.png",
-                VIDEO_2,
+                VIDEO_HUE,
                 "BEST SELLER",
                 4.9f,
                 200,
@@ -266,16 +329,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Lào Cai",
                 "3N2Đ",
                 "4.200.000đ",
-                "Trải nghiệm nóc nhà Đông Dương tại Sa Pa.",
-                "Ngày 1: Hà Nội → Sa Pa\n" +
+                "Fansipan là nóc nhà Đông Dương, nơi mây trời ôm lấy những thửa ruộng bậc thang và mái nhà nhỏ của Sa Pa. Tour mang đến cảm giác hồi hộp khi đi cáp treo xuyên mây, chạm tay vào mốc 3.143m và ngắm toàn cảnh núi non hùng vĩ. Điểm khác biệt là lịch trình cân bằng giữa khám phá bản làng và hành trình chinh phục đỉnh cao, phù hợp cả gia đình lẫn nhóm bạn.",
+                "Ngày 1: Hà Nội - Sa Pa\n" +
+                        "05:30 Đến Sa Pa, ăn sáng và gửi hành lý.\n" +
+                        "08:00 Tham quan bản Cát Cát, thác Tiên Sa.\n" +
+                        "11:30 Ăn trưa, nhận phòng khách sạn.\n" +
+                        "14:30 Check-in Moana, thưởng thức cafe view núi.\n" +
+                        "18:30 Dạo chợ đêm Sa Pa, thưởng thức lẩu cá tầm.\n" +
                         "Ngày 2: Cáp treo Fansipan\n" +
-                        "Ngày 3: Bản Cát Cát → về",
+                        "07:00 Ăn sáng, di chuyển đến ga cáp treo.\n" +
+                        "08:30 Trải nghiệm cáp treo, leo bậc đá lên đỉnh.\n" +
+                        "11:30 Ăn trưa tại khu ẩm thực trên núi.\n" +
+                        "15:00 Tự do chụp ảnh, mua quà lưu niệm.\n" +
+                        "19:00 Nghỉ tối, tự do khám phá Sa Pa.\n" +
+                        "Ngày 3: Sa Pa - Hà Nội\n" +
+                        "07:30 Trả phòng, tham quan nhà thờ đá.\n" +
+                        "09:00 Mua đặc sản, lên xe về Hà Nội.\n" +
+                        "15:30 Về đến Hà Nội, kết thúc tour.",
                 "Xe giường nằm\nKhách sạn\nVé cáp treo\nĂn sáng",
                 "Chi phí cá nhân\nĂn trưa/tối",
                 0,
                 "https://res.cloudinary.com/dzjlcbwwh/image/upload/v1773626520/1a3903f1-7c6a-4458-9fc6-519589789751.png",
                 "https://res.cloudinary.com/dzjlcbwwh/image/upload/v1773626520/1a3903f1-7c6a-4458-9fc6-519589789751.png",
-                VIDEO_3,
+                VIDEO_HA_LONG,
                 "ADVENTURE",
                 4.7f,
                 85,
@@ -290,15 +366,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Thừa Thiên Huế",
                 "2N1Đ",
                 "1.500.000đ",
-                "Tham quan di sản văn hóa triều Nguyễn.",
-                "Ngày 1: Đại Nội, chùa Thiên Mụ\n" +
-                        "Ngày 2: Lăng Khải Định → về",
-                "Xe đưa đón\nVé tham quan\nĂn sáng",
+                "Huế mang vẻ đẹp trầm mặc của cố đô, nơi sông Hương lững lờ và tiếng chuông chùa vang nhẹ. Tour này đưa bạn đi qua những công trình cung đình uy nghi, thưởng thức ẩm thực tinh tế và cảm nhận nhịp sống chậm rãi của người Huế. Điểm khác biệt là trải nghiệm nghe ca Huế trên sông Hương vào buổi tối, một khoảnh khắc vừa lãng mạn vừa sâu lắng.",
+                "Ngày 1: Đà Nẵng - Huế\n" +
+                        "07:00 Đón tại Đà Nẵng, di chuyển qua đèo Hải Vân.\n" +
+                        "10:30 Đến Huế, ăn trưa với bún bò Huế.\n" +
+                        "13:30 Tham quan Đại Nội, Ngọ Môn, Tử Cấm Thành.\n" +
+                        "16:30 Ghé chùa Thiên Mụ, ngắm sông Hương.\n" +
+                        "19:00 Du thuyền nghe ca Huế, thả hoa đăng.\n" +
+                        "Ngày 2: Lăng tẩm - Trở về\n" +
+                        "07:30 Tham quan lăng Khải Định, chụp ảnh kiến trúc cổ.\n" +
+                        "09:30 Ghé lăng Tự Đức, vườn thơ cổ.\n" +
+                        "11:30 Ăn trưa với cơm hến, bánh bèo.\n" +
+                        "13:00 Lên xe về Đà Nẵng, kết thúc tour.",
+                "Xe đưa đón\nVé tham quan\nĂn sáng\nDu thuyền sông Hương",
                 "Chi phí cá nhân\nĂn trưa/tối",
                 0,
                 "https://res.cloudinary.com/dzjlcbwwh/image/upload/v1773626555/2f7a9346-9a04-4efc-b96a-73652ed4c945.png",
                 "https://res.cloudinary.com/dzjlcbwwh/image/upload/v1773626555/2f7a9346-9a04-4efc-b96a-73652ed4c945.png",
-                VIDEO_4,
+                VIDEO_HUE + "|" + VIDEO_HA_LONG,
                 "CULTURAL",
                 4.6f,
                 120,
@@ -313,16 +398,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Đà Lạt",
                 "3N2Đ",
                 "2.800.000đ",
-                "Check-in thiên đường hoa và khí hậu mát mẻ.",
-                "Ngày 1: TP.HCM → Đà Lạt\n" +
-                        "Ngày 2: Thung lũng tình yêu, Langbiang\n" +
-                        "Ngày 3: Chợ Đà Lạt → về",
+                "Đà Lạt là thành phố của hoa và sương, nơi sáng se lạnh, chiều nắng vàng và tối lành lạnh đầy lãng mạn. Bạn sẽ thức dậy giữa mùi thông, nhâm nhi cà phê view đồi và ghé thăm những vườn hoa rực rỡ. Điểm khác biệt của tour là lịch trình cân bằng giữa check-in nổi tiếng và trải nghiệm đời sống địa phương, giúp chuyến đi vừa “chill” vừa đáng nhớ.",
+                "Ngày 1: TP.HCM - Đà Lạt\n" +
+                        "06:00 Khởi hành từ TP.HCM, dừng chân ăn sáng.\n" +
+                        "12:00 Đến Đà Lạt, nhận phòng khách sạn.\n" +
+                        "15:00 Dạo hồ Xuân Hương, quảng trường Lâm Viên.\n" +
+                        "18:30 Ăn tối, khám phá chợ đêm Đà Lạt.\n" +
+                        "Ngày 2: Đồi chè - Langbiang\n" +
+                        "07:00 Tham quan đồi chè Cầu Đất, săn mây.\n" +
+                        "10:00 Check-in vườn hoa cẩm tú cầu.\n" +
+                        "12:00 Ăn trưa, nghỉ ngơi.\n" +
+                        "14:30 Tham quan Thung lũng Tình Yêu.\n" +
+                        "16:30 Lên đỉnh Langbiang, ngắm hoàng hôn.\n" +
+                        "19:00 Thưởng thức cà phê view núi.\n" +
+                        "Ngày 3: Dinh Bảo Đại - Trở về\n" +
+                        "07:30 Thăm Dinh Bảo Đại, nhà thờ Con Gà.\n" +
+                        "10:00 Mua đặc sản mứt, trà.\n" +
+                        "13:00 Khởi hành về TP.HCM, kết thúc tour.",
                 "Xe đưa đón\nKhách sạn\nĂn sáng",
                 "Chi phí cá nhân\nVé trò chơi",
                 0,
                 "https://res.cloudinary.com/dzjlcbwwh/image/upload/v1773626599/9e94999d-423a-4d23-a187-41317434956c.png",
                 "https://res.cloudinary.com/dzjlcbwwh/image/upload/v1773626599/9e94999d-423a-4d23-a187-41317434956c.png",
-                VIDEO_5,
+                VIDEO_HON_SON,
                 "ROMANTIC",
                 4.8f,
                 310,
@@ -337,16 +435,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Đà Nẵng",
                 "3N2Đ",
                 "3.150.000đ",
-                "Check-in Cầu Vàng và làng Pháp.",
-                "Ngày 1: Đà Nẵng\n" +
-                        "Ngày 2: Bà Nà Hills\n" +
-                        "Ngày 3: Biển Mỹ Khê → về",
+                "Bà Nà Hills nổi tiếng với Cầu Vàng và làng Pháp như bước ra từ truyện cổ. Tour kết hợp thiên nhiên mát lạnh, vui chơi giải trí và ẩm thực phong phú, phù hợp cho nhóm bạn trẻ lẫn gia đình. Điểm khác biệt là dành trọn một ngày cho Bà Nà để bạn khám phá đủ mọi góc sống ảo và khu vui chơi Fantasy Park mà không vội vàng.",
+                "Ngày 1: Đà Nẵng - Biển Mỹ Khê\n" +
+                        "10:00 Đón khách, nhận phòng khách sạn.\n" +
+                        "15:00 Tắm biển Mỹ Khê, thư giãn.\n" +
+                        "18:30 Ăn tối hải sản, dạo cầu Rồng.\n" +
+                        "Ngày 2: Bà Nà Hills trọn ngày\n" +
+                        "07:30 Ăn sáng, khởi hành đi Bà Nà.\n" +
+                        "08:45 Đi cáp treo, ngắm rừng nguyên sinh.\n" +
+                        "09:30 Check-in Cầu Vàng, vườn hoa Le Jardin.\n" +
+                        "11:30 Tham quan làng Pháp, chụp ảnh phố cổ.\n" +
+                        "12:30 Buffet trưa tại Bà Nà.\n" +
+                        "14:00 Vui chơi Fantasy Park, hầm rượu.\n" +
+                        "16:30 Xuống núi, về khách sạn nghỉ.\n" +
+                        "19:00 Tự do khám phá Đà Nẵng về đêm.\n" +
+                        "Ngày 3: Ngũ Hành Sơn - Trở về\n" +
+                        "08:00 Tham quan Ngũ Hành Sơn, làng đá Non Nước.\n" +
+                        "11:00 Mua sắm chợ Hàn, trả phòng.\n" +
+                        "13:00 Kết thúc tour.",
                 "Vé cáp treo\nXe đưa đón\nĂn sáng",
                 "Chi phí cá nhân",
                 0,
                 "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
                 "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
-                VIDEO_1,
+                VIDEO_HA_LONG,
                 "TOP RATED",
                 4.7f,
                 180,
@@ -361,15 +473,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Hà Nội",
                 "2N1Đ",
                 "1.400.000đ",
-                "Trải nghiệm văn hóa thủ đô.",
-                "Ngày 1: Hồ Gươm, phố cổ\n" +
-                        "Ngày 2: Lăng Bác → về",
+                "Hà Nội là sự giao thoa giữa nét cổ kính và nhịp sống hiện đại. Tour này đưa bạn lang thang qua 36 phố phường, thưởng thức cafe trứng, bún chả và lắng nghe những câu chuyện lịch sử ngay giữa lòng phố cổ. Điểm khác biệt là lịch trình nhẹ nhàng nhưng giàu trải nghiệm văn hóa, phù hợp cả với người đi lần đầu lẫn muốn “sống” lại không khí Hà Nội xưa.",
+                "Ngày 1: Phố cổ - Hồ Gươm\n" +
+                        "09:00 Gặp hướng dẫn viên, bắt đầu dạo phố cổ.\n" +
+                        "10:30 Tham quan đền Ngọc Sơn, cầu Thê Húc.\n" +
+                        "12:00 Ăn trưa bún chả phố cổ.\n" +
+                        "14:00 Check-in nhà cổ Mã Mây, chợ Đồng Xuân.\n" +
+                        "18:00 Dạo phố đi bộ, thưởng thức cafe trứng.\n" +
+                        "20:00 Tự do khám phá ẩm thực đường phố.\n" +
+                        "Ngày 2: Văn hóa - Trở về\n" +
+                        "07:30 Tham quan Lăng Bác, quảng trường Ba Đình.\n" +
+                        "09:30 Ghé Văn Miếu - Quốc Tử Giám.\n" +
+                        "12:00 Ăn trưa phở bò truyền thống.\n" +
+                        "14:00 Kết thúc tour.",
                 "Khách sạn\nĂn sáng\nXe đưa đón",
                 "Chi phí cá nhân",
                 0,
                 "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
                 "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
-                VIDEO_2,
+                VIDEO_HUE,
                 "ICONIC",
                 4.6f,
                 210,
@@ -384,15 +506,25 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Bà Rịa - Vũng Tàu",
                 "2N1Đ",
                 "1.300.000đ",
-                "Du lịch biển gần Sài Gòn.",
-                "Ngày 1: TP.HCM → Vũng Tàu\n" +
-                        "Ngày 2: Tắm biển → về",
+                "Vũng Tàu là lựa chọn hoàn hảo cho chuyến đi ngắn gần Sài Gòn: biển xanh, hải sản tươi và không khí thoáng đãng. Bạn sẽ tắm biển, leo tượng Chúa Kitô để ngắm toàn cảnh và thưởng thức bánh khọt nóng giòn. Điểm đặc biệt của tour là lịch trình tối ưu cho cuối tuần, vừa nghỉ ngơi vừa có đủ hoạt động check-in.",
+                "Ngày 1: TP.HCM - Vũng Tàu\n" +
+                        "06:00 Khởi hành từ TP.HCM, dừng ăn sáng.\n" +
+                        "08:30 Đến Vũng Tàu, nhận phòng và nghỉ ngơi.\n" +
+                        "10:00 Tắm biển Bãi Sau, chụp ảnh bờ biển.\n" +
+                        "15:00 Leo tượng Chúa Kitô, ngắm toàn cảnh thành phố.\n" +
+                        "17:30 Ngắm hoàng hôn tại Mũi Nghinh Phong.\n" +
+                        "19:00 Ăn tối hải sản tươi sống.\n" +
+                        "Ngày 2: Hải đăng - Trở về\n" +
+                        "06:30 Tham quan hải đăng Vũng Tàu, chụp ảnh bình minh.\n" +
+                        "08:30 Thưởng thức bánh khọt Gốc Vú Sữa.\n" +
+                        "10:00 Mua quà lưu niệm, trả phòng.\n" +
+                        "12:00 Khởi hành về TP.HCM, kết thúc tour.",
                 "Xe đưa đón\nKhách sạn",
                 "Ăn uống\nChi phí cá nhân",
                 0,
                 "https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
                 "https://images.unsplash.com/photo-1500375592092-40eb2168fd21",
-                VIDEO_3,
+                VIDEO_HON_SON,
                 "BEACH",
                 4.5f,
                 95,
@@ -407,16 +539,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Khánh Hòa",
                 "3N2Đ",
                 "3.600.000đ",
-                "Tour biển đảo hấp dẫn.",
-                "Ngày 1: TP.HCM → Nha Trang\n" +
+                "Nha Trang sở hữu những bãi biển trong xanh và hệ sinh thái biển đa dạng. Tour 4 đảo đưa bạn lướt sóng, lặn ngắm san hô và tắm bùn thư giãn, cảm giác như đang tận hưởng một kỳ nghỉ resort đúng nghĩa. Điểm khác biệt là lịch trình trọn ngày trên biển, kết hợp ăn trưa trên bè và trải nghiệm bùn khoáng, giúp chuyến đi vừa vui vừa phục hồi năng lượng.",
+                "Ngày 1: TP.HCM - Nha Trang\n" +
+                        "08:00 Đến Nha Trang, nhận phòng khách sạn.\n" +
+                        "10:00 Tham quan Tháp Bà Ponagar.\n" +
+                        "12:00 Ăn trưa, nghỉ ngơi.\n" +
+                        "18:30 Dạo biển Trần Phú, chợ đêm Nha Trang.\n" +
                         "Ngày 2: Tour 4 đảo\n" +
-                        "Ngày 3: Tắm bùn → về",
+                        "08:00 Lên tàu tham quan vịnh Nha Trang.\n" +
+                        "09:00 Hòn Mun lặn ngắm san hô.\n" +
+                        "11:00 Tắm bùn khoáng Hòn Tằm.\n" +
+                        "12:30 Ăn trưa hải sản trên bè nổi.\n" +
+                        "14:00 Ghé Hòn Một, chèo kayak, chụp ảnh.\n" +
+                        "16:00 Về đất liền, tự do nghỉ ngơi.\n" +
+                        "Ngày 3: Biển - Mua sắm - Trở về\n" +
+                        "07:30 Tắm biển, ăn sáng.\n" +
+                        "10:00 Mua yến sào, đặc sản Nha Trang.\n" +
+                        "13:00 Kết thúc tour.",
                 "Tàu tham quan\nĂn trưa\nKhách sạn",
                 "Chi phí cá nhân",
                 0,
                 "https://images.unsplash.com/photo-1470770841072-f978cf4d019e",
                 "https://images.unsplash.com/photo-1470770841072-f978cf4d019e",
-                VIDEO_4,
+                VIDEO_HON_SON + "|" + VIDEO_HA_LONG,
                 "HOT",
                 4.7f,
                 160,
@@ -431,16 +576,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "Hà Giang",
                 "3N2Đ",
                 "3.900.000đ",
-                "Cung đường phượt đẹp nhất Việt Nam.",
-                "Ngày 1: Hà Nội → Hà Giang\n" +
-                        "Ngày 2: Mã Pì Lèng\n" +
-                        "Ngày 3: Đồng Văn → về",
+                "Đồng Văn là bản hùng ca của núi đá, nơi mỗi cung đường đều như một bức tranh. Bạn sẽ băng qua đèo Mã Pì Lèng, nhìn dòng Nho Quế xanh ngọc dưới chân và ngủ lại trong phố cổ giữa vùng cao. Điểm khác biệt của tour là trải nghiệm cung đường đèo đẹp nhất Việt Nam kết hợp văn hóa bản địa, phù hợp cho người mê khám phá.",
+                "Ngày 1: Hà Nội - Hà Giang - Yên Minh\n" +
+                        "06:00 Khởi hành từ Hà Nội, dừng ăn trưa tại Tuyên Quang.\n" +
+                        "15:00 Check-in cổng trời Quản Bạ, núi Đôi Cô Tiên.\n" +
+                        "18:00 Đến Yên Minh, nhận phòng nghỉ đêm.\n" +
+                        "Ngày 2: Lũng Cú - Mã Pì Lèng - Đồng Văn\n" +
+                        "07:00 Tham quan dinh Vua Mèo (Vương Chí Sình).\n" +
+                        "10:00 Chinh phục cột cờ Lũng Cú.\n" +
+                        "12:00 Ăn trưa tại Đồng Văn.\n" +
+                        "14:00 Chinh phục đèo Mã Pì Lèng, du thuyền sông Nho Quế.\n" +
+                        "18:30 Dạo phố cổ Đồng Văn, thưởng thức thắng dền.\n" +
+                        "Ngày 3: Đồng Văn - Hà Nội\n" +
+                        "07:00 Ghé chợ phiên (nếu đúng ngày).\n" +
+                        "09:00 Lên xe về Hà Nội.\n" +
+                        "19:00 Về đến Hà Nội, kết thúc tour.",
                 "Xe đưa đón\nKhách sạn\nĂn sáng",
                 "Chi phí cá nhân",
                 0,
                 "https://images.unsplash.com/photo-1501785888041-af3ef285b470",
                 "https://images.unsplash.com/photo-1501785888041-af3ef285b470",
-                VIDEO_5,
+                VIDEO_HA_LONG,
                 "ADVENTURE",
                 4.8f,
                 110,
@@ -478,7 +634,225 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "https://images.unsplash.com/photo-1589779267460-1e5f5f5f5f5f", 4.8f, "SIÊU RẺ");
         insertCombo(db, "Combo Đà Lạt Mộng Mơ", "Đà Lạt", "Xe Limousine + Homestay trung tâm", "2.800.000đ", "1.900.000đ", 0,
                 "https://images.unsplash.com/photo-1542296332-2e4473faf563", 4.7f, "BÁN CHẠY");
+
+        // =========================
+        // USERS + MOCK DATA
+        // =========================
+        insertUser(db, "anh@gmail.com", "12345678", "Vân Ánh", "0987654321", ROLE_BUYER, "https://res.cloudinary.com/dgiu7ewoy/image/upload/v1774379896/samples/animals/three-dogs.jpg");
+        insertUser(db, "admin@gmail.com", "12345678", "Admin", "091234560", ROLE_SELLER, "https://res.cloudinary.com/dgiu7ewoy/image/upload/v1774379898/samples/landscapes/nature-mountains.jpg");
+
+        ensureSeedUsers(db);
+
+        int userId = getUserIdByEmail(db, "anh@gmail.com");
+        int tourHaLong = getTourIdByTitle(db, "Vịnh Hạ Long");
+        int tourHoiAn = getTourIdByTitle(db, "Phố Cổ Hội An");
+        int tourDaLat = getTourIdByTitle(db, "Thành phố Ngàn Hoa");
+        int tourNhaTrang = getTourIdByTitle(db, "Nha Trang 4 đảo");
+
+        insertCommentSeed(db, userId, tourHaLong, 5f,
+                "Trải nghiệm ngủ đêm trên du thuyền quá chill, sáng dậy nhìn sương trên vịnh thấy đúng kiểu nghỉ dưỡng.",
+                "2026-03-22 20:45:00");
+        insertCommentSeed(db, userId, tourHoiAn, 4.8f,
+                "Phố cổ buổi tối đẹp hơn tưởng tượng, thả hoa đăng xong mình ngồi bên sông nghe nhạc thật yên.",
+                "2026-03-21 21:20:00");
+        insertCommentSeed(db, userId, tourDaLat, 4.7f,
+                "Săn mây Cầu Đất đúng nghĩa “đã đời”, thời tiết se lạnh làm chuyến đi cực dễ chịu.",
+                "2026-02-20 18:45:00");
+        insertCommentSeed(db, userId, tourNhaTrang, 4.6f,
+                "Ngày đi đảo nắng đẹp, nước trong. Lặn ngắm san hô và ăn trưa trên bè rất vui.",
+                "2026-03-12 16:10:00");
+
+        insertTravelDiarySeed(db, userId, tourHaLong,
+                "Một tối trên vịnh Hạ Long",
+                "Khoảnh khắc hoàng hôn buông xuống, mình đứng trên boong tàu và cảm giác mọi thứ chậm lại. Sóng vỗ nhè nhẹ, mùi biển mằn mặn rất dễ chịu.",
+                "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee",
+                4.9f,
+                "2026-03-22 22:10:00",
+                "2026-03-22 22:10:00");
+        insertTravelDiarySeed(db, userId, tourHoiAn,
+                "Đêm đèn lồng Hội An",
+                "Mình thả hoa đăng rồi lang thang qua những con hẻm nhỏ, nghe tiếng guốc gõ và tiếng rao nhẹ. Cảm giác như đang ở một Hội An rất riêng.",
+                "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
+                4.8f,
+                "2026-03-20 21:40:00",
+                "2026-03-20 21:40:00");
+
+        insertFavorite(db, "Vịnh Hạ Long", "Tour", "2026-03-25");
+        insertFavorite(db, "Phố Cổ Hội An", "Tour", "2026-03-20");
+        insertFavorite(db, "Nha Trang 4 đảo", "Tour", "2026-03-10");
+
+        insertOrderSeed(db, "Vịnh Hạ Long", "2026-04-10", 2, "Vân Ánh", "0987654321", "anh@gmail.com", "CONFIRMED");
+        insertOrderSeed(db, "Bà Nà Hills - Cầu Vàng", "2026-05-05", 3, "Vân Ánh", "0987654321", "anh@gmail.com", "PENDING");
+        insertOrderSeed(db, "Phố Cổ Hội An", "2026-03-20", 2, "Vân Ánh", "0987654321", "anh@gmail.com", "COMPLETED");
+        insertOrderSeed(db, "Thành phố Ngàn Hoa", "2026-02-18", 1, "Vân Ánh", "0987654321", "anh@gmail.com", "COMPLETED");
+
+        insertCancelledTripSeed(db, "Vũng Tàu biển xanh", "2026-03-05", "Lịch công tác thay đổi nên hủy sớm để sắp xếp lại.", "2026-03-01 09:15:00", "anh@gmail.com");
+
+        insertReviewSeed(db, "Tour", "Vịnh Hạ Long", 4.9f,
+                "Đêm ngủ trên du thuyền thật yên bình, ngắm bình minh trên vịnh là khoảnh khắc đáng nhớ nhất chuyến đi. HDV nhiệt tình, lịch trình hợp lý.",
+                "2026-03-22 20:10:00");
+        insertReviewSeed(db, "Tour", "Phố Cổ Hội An", 4.8f,
+                "Mình rất thích phần làng nghề và thả hoa đăng. Phố cổ về đêm đẹp hơn ảnh rất nhiều, đồ ăn ngon và không quá đông.",
+                "2026-03-21 21:05:00");
+        insertReviewSeed(db, "Tour", "Thành phố Ngàn Hoa", 4.7f,
+                "Đà Lạt đúng nghĩa để nghỉ dưỡng, lịch trình vừa đủ, không quá mệt. Săn mây Cầu Đất cực đã!",
+                "2026-02-20 18:30:00");
+
+        insertJournalSeed(db, "Một đêm trên vịnh",
+                "Tối nay mình ngồi trên boong tàu, gió biển mát rượi và mặt nước lấp lánh như sao. Lần đầu câu mực, hồi hộp mà vui không tả được.",
+                "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee", 4.9f, "2026-03-22 22:10:00");
+        insertJournalSeed(db, "Hội An mùa đèn lồng",
+                "Khoảnh khắc thả hoa đăng xuống sông Hoài làm mình thấy nhẹ lòng. Phố cổ về đêm vừa rực rỡ vừa yên bình.",
+                "https://images.unsplash.com/photo-1507525428034-b723cf961d3e", 4.8f, "2026-03-20 21:40:00");
+
+        insertNotificationSeed(db, "Đặt tour thành công",
+                "Bạn đã đặt tour Vịnh Hạ Long (2N1Đ) ngày 10/04/2026. Hãy chuẩn bị hành lý và giấy tờ cần thiết nhé!",
+                "UNREAD", "2026-03-25 08:30:00");
+        insertNotificationSeed(db, "Khuyến mãi mùa hè",
+                "Ưu đãi giảm 15% cho tour biển tháng 5. Áp dụng cho Nha Trang và Vũng Tàu.",
+                "READ", "2026-03-28 09:00:00");
+        insertNotificationSeed(db, "Nhắc lịch khởi hành",
+                "Tour Vịnh Hạ Long sẽ khởi hành sau 10 ngày. Vui lòng xác nhận giờ đón.",
+                "UNREAD", "2026-03-31 10:00:00");
     }
+
+    private void ensureSeedUsers(SQLiteDatabase db) {
+        if (db == null) return;
+        insertUserIfMissing(db, "anh@gmail.com", "12345678", "Vân Ánh", "0987654321", ROLE_BUYER,
+                "https://res.cloudinary.com/dgiu7ewoy/image/upload/v1774379896/samples/animals/three-dogs.jpg");
+        insertUserIfMissing(db, "admin@gmail.com", "12345678", "Admin", "091234560", ROLE_SELLER,
+                "https://res.cloudinary.com/dgiu7ewoy/image/upload/v1774379898/samples/landscapes/nature-mountains.jpg");
+    }
+
+    private void insertUserIfMissing(SQLiteDatabase db, String email, String password, String fullname, String phone, String role, String userImage) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_EMAIL, email);
+        v.put(COLUMN_PASSWORD, password);
+        v.put(COLUMN_FULLNAME, fullname);
+        v.put(COLUMN_PHONE, phone);
+        v.put(COLUMN_ROLE, role);
+        if (userImage != null) v.put(COLUMN_USER_IMAGE, userImage);
+        db.insertWithOnConflict(TABLE_USERS, null, v, SQLiteDatabase.CONFLICT_IGNORE);
+    }
+
+    private int getUserIdByEmail(SQLiteDatabase db, String email) {
+        if (db == null || email == null || email.trim().isEmpty()) return -1;
+        Cursor c = db.rawQuery("SELECT " + COLUMN_ID + " FROM " + TABLE_USERS + " WHERE " + COLUMN_EMAIL + " = ?", new String[]{email});
+        try {
+            if (!c.moveToFirst()) return -1;
+            return c.getInt(0);
+        } finally {
+            c.close();
+        }
+    }
+
+    private int getTourIdByTitle(SQLiteDatabase db, String title) {
+        if (db == null || title == null || title.trim().isEmpty()) return -1;
+        Cursor c = db.rawQuery("SELECT " + COLUMN_ID + " FROM " + TABLE_TOURS + " WHERE " + COLUMN_TITLE + " = ?", new String[]{title});
+        try {
+            if (!c.moveToFirst()) return -1;
+            return c.getInt(0);
+        } finally {
+            c.close();
+        }
+    }
+
+    private void insertCommentSeed(SQLiteDatabase db, int userId, int tourId, float rating, String content, String createdAt) {
+        if (db == null || userId <= 0 || tourId <= 0) return;
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_USER_ID, userId);
+        v.put(COLUMN_TOUR_ID, tourId);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_CONTENT, content);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        v.put(COLUMN_UPDATED_AT, createdAt);
+        db.insert(TABLE_COMMENTS, null, v);
+    }
+
+    private void insertTravelDiarySeed(SQLiteDatabase db, int userId, int tourId, String title, String content, String imageUrl, float rating, String createdAt, String updatedAt) {
+        if (db == null || userId <= 0) return;
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_USER_ID, userId);
+        if (tourId > 0) v.put(COLUMN_TOUR_ID, tourId);
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_CONTENT, content);
+        v.put(COLUMN_IMAGE_URL, imageUrl);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        v.put(COLUMN_UPDATED_AT, updatedAt);
+        db.insert(TABLE_TRAVEL_DIARY, null, v);
+    }
+
+    private void insertUser(SQLiteDatabase db, String email, String password, String fullname, String phone, String role, String userImage) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_EMAIL, email);
+        v.put(COLUMN_PASSWORD, password);
+        v.put(COLUMN_FULLNAME, fullname);
+        v.put(COLUMN_PHONE, phone);
+        v.put(COLUMN_ROLE, role);
+        if (userImage != null) v.put(COLUMN_USER_IMAGE, userImage);
+        db.insert(TABLE_USERS, null, v);
+    }
+
+    private void insertFavorite(SQLiteDatabase db, String title, String itemType, String createdAt) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_ITEM_TYPE, itemType);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        db.insert(TABLE_FAVORITES, null, v);
+    }
+
+    private void insertOrderSeed(SQLiteDatabase db, String title, String date, int people, String name, String phone, String userEmail, String status) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_DATE, date);
+        v.put("people", people);
+        v.put("name", name);
+        v.put("phone", phone);
+        v.put(COLUMN_USER_EMAIL, userEmail);
+        v.put(COLUMN_ORDER_STATUS, status);
+        db.insert(TABLE_ORDERS, null, v);
+    }
+
+    private void insertCancelledTripSeed(SQLiteDatabase db, String title, String dateRange, String reason, String createdAt, String userEmail) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_DATE_RANGE, dateRange);
+        v.put(COLUMN_REASON, reason);
+        v.put(COLUMN_USER_EMAIL, userEmail);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        db.insert(TABLE_CANCELLED_TRIPS, null, v);
+    }
+
+    private void insertReviewSeed(SQLiteDatabase db, String itemType, String itemTitle, float rating, String content, String createdAt) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_ITEM_TYPE, itemType);
+        v.put(COLUMN_ITEM_TITLE, itemTitle);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_CONTENT, content);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        db.insert(TABLE_REVIEWS, null, v);
+    }
+
+    private void insertJournalSeed(SQLiteDatabase db, String title, String content, String imageUrl, float rating, String createdAt) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_CONTENT, content);
+        v.put(COLUMN_IMAGE_URL, imageUrl);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        db.insert(TABLE_JOURNAL, null, v);
+    }
+
+    private void insertNotificationSeed(SQLiteDatabase db, String title, String content, String status, String createdAt) {
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title);
+        v.put(COLUMN_CONTENT, content);
+        v.put(COLUMN_STATUS, status);
+        v.put(COLUMN_CREATED_AT, createdAt);
+        db.insert(TABLE_NOTIFICATIONS, null, v);
+    }
+
 
     private void insertTicket(SQLiteDatabase db, String route, String dateRange, String price, String discount, String type, int res, String url) {
         ContentValues v = new ContentValues();
@@ -605,6 +979,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_NOTIFICATIONS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_CANCELLED_TRIPS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_BUS_TRIPS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_COMMENTS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_TRAVEL_DIARY);
         onCreate(db);
     }
 
@@ -1172,21 +1548,154 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return list;
     }
 
-    public List<com.example.vntravelapp.models.JournalEntry> getJournalEntries() {
-        List<com.example.vntravelapp.models.JournalEntry> list = new ArrayList<>();
-        Cursor c = getReadableDatabase().query(TABLE_JOURNAL, null, null, null, null, null, COLUMN_CREATED_AT + " DESC");
+    public List<com.example.vntravelapp.models.ReviewEntry> getReviewEntriesByUser(String userEmail) {
+        List<com.example.vntravelapp.models.ReviewEntry> list = new ArrayList<>();
+        int userId = getUserIdByEmail(getReadableDatabase(), userEmail);
+        if (userId <= 0) return list;
+        String sql = "SELECT c." + COLUMN_ID + ", c." + COLUMN_TOUR_ID + ", t." + COLUMN_TITLE + ", c." + COLUMN_RATING + ", c." + COLUMN_CONTENT + ", c." + COLUMN_CREATED_AT + " " +
+                "FROM " + TABLE_COMMENTS + " c " +
+                "LEFT JOIN " + TABLE_TOURS + " t ON c." + COLUMN_TOUR_ID + " = t." + COLUMN_ID + " " +
+                "WHERE c." + COLUMN_USER_ID + " = ? " +
+                "ORDER BY c." + COLUMN_CREATED_AT + " DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{String.valueOf(userId)});
         if (c.moveToFirst()) {
             do {
-                String title = c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE));
-                String content = c.getString(c.getColumnIndexOrThrow(COLUMN_CONTENT));
-                String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
-                float rating = c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING));
-                String createdAt = c.getString(c.getColumnIndexOrThrow(COLUMN_CREATED_AT));
-                list.add(new com.example.vntravelapp.models.JournalEntry(title, content, imageUrl, rating, createdAt));
+                int id = c.getInt(0);
+                int tourId = c.getInt(1);
+                String tourTitle = c.getString(2);
+                float rating = c.getFloat(3);
+                String content = c.getString(4);
+                String createdAt = c.getString(5);
+                list.add(new com.example.vntravelapp.models.ReviewEntry(id, tourId, "Tour", tourTitle, rating, content, createdAt));
             } while (c.moveToNext());
         }
         c.close();
         return list;
+    }
+
+    public List<com.example.vntravelapp.models.CommentItem> getCommentsForTour(int tourId) {
+        List<com.example.vntravelapp.models.CommentItem> list = new ArrayList<>();
+        if (tourId <= 0) return list;
+        String sql = "SELECT c." + COLUMN_ID + ", u." + COLUMN_FULLNAME + ", c." + COLUMN_RATING + ", c." + COLUMN_CONTENT + ", c." + COLUMN_CREATED_AT + " " +
+                "FROM " + TABLE_COMMENTS + " c " +
+                "LEFT JOIN " + TABLE_USERS + " u ON c." + COLUMN_USER_ID + " = u." + COLUMN_ID + " " +
+                "WHERE c." + COLUMN_TOUR_ID + " = ? " +
+                "ORDER BY c." + COLUMN_CREATED_AT + " DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{String.valueOf(tourId)});
+        if (c.moveToFirst()) {
+            do {
+                list.add(new com.example.vntravelapp.models.CommentItem(
+                        c.getInt(0),
+                        c.getString(1),
+                        c.getFloat(2),
+                        c.getString(3),
+                        c.getString(4)
+                ));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public boolean addComment(int userId, int tourId, float rating, String content) {
+        if (userId <= 0 || tourId <= 0 || content == null || content.trim().isEmpty()) return false;
+        String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_USER_ID, userId);
+        v.put(COLUMN_TOUR_ID, tourId);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_CONTENT, content.trim());
+        v.put(COLUMN_CREATED_AT, now);
+        v.put(COLUMN_UPDATED_AT, now);
+        return getWritableDatabase().insert(TABLE_COMMENTS, null, v) != -1;
+    }
+
+    public boolean updateComment(int commentId, String content, float rating) {
+        if (commentId <= 0 || content == null || content.trim().isEmpty()) return false;
+        String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_CONTENT, content.trim());
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_UPDATED_AT, now);
+        return getWritableDatabase().update(TABLE_COMMENTS, v, COLUMN_ID + " = ?", new String[]{String.valueOf(commentId)}) > 0;
+    }
+
+    public boolean deleteComment(int commentId) {
+        if (commentId <= 0) return false;
+        return getWritableDatabase().delete(TABLE_COMMENTS, COLUMN_ID + " = ?", new String[]{String.valueOf(commentId)}) > 0;
+    }
+
+    public List<com.example.vntravelapp.models.JournalEntry> getTravelDiaryEntriesByUser(String userEmail) {
+        List<com.example.vntravelapp.models.JournalEntry> list = new ArrayList<>();
+        int userId = getUserIdByEmail(getReadableDatabase(), userEmail);
+        if (userId <= 0) return list;
+        String sql = "SELECT " + COLUMN_ID + ", " + COLUMN_TOUR_ID + ", " + COLUMN_TITLE + ", " + COLUMN_CONTENT + ", " + COLUMN_IMAGE_URL + ", " + COLUMN_RATING + ", " + COLUMN_CREATED_AT + ", " + COLUMN_UPDATED_AT + " " +
+                "FROM " + TABLE_TRAVEL_DIARY + " WHERE " + COLUMN_USER_ID + " = ? ORDER BY " + COLUMN_UPDATED_AT + " DESC";
+        Cursor c = getReadableDatabase().rawQuery(sql, new String[]{String.valueOf(userId)});
+        if (c.moveToFirst()) {
+            do {
+                list.add(new com.example.vntravelapp.models.JournalEntry(
+                        c.getInt(0),
+                        c.getInt(1),
+                        c.getString(2),
+                        c.getString(3),
+                        c.getString(4),
+                        c.getFloat(5),
+                        c.getString(6),
+                        c.getString(7)
+                ));
+            } while (c.moveToNext());
+        }
+        c.close();
+        return list;
+    }
+
+    public long addTravelDiaryEntry(int userId, Integer tourId, String title, String content, String imageUrl, float rating) {
+        if (userId <= 0 || title == null || title.trim().isEmpty() || content == null || content.trim().isEmpty()) return -1;
+        String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_USER_ID, userId);
+        if (tourId != null && tourId > 0) v.put(COLUMN_TOUR_ID, tourId);
+        v.put(COLUMN_TITLE, title.trim());
+        v.put(COLUMN_CONTENT, content.trim());
+        v.put(COLUMN_IMAGE_URL, imageUrl != null ? imageUrl.trim() : null);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_CREATED_AT, now);
+        v.put(COLUMN_UPDATED_AT, now);
+        return getWritableDatabase().insert(TABLE_TRAVEL_DIARY, null, v);
+    }
+
+    public boolean updateTravelDiaryEntry(int entryId, String title, String content, String imageUrl, float rating, Integer tourId) {
+        if (entryId <= 0 || title == null || title.trim().isEmpty() || content == null || content.trim().isEmpty()) return false;
+        String now = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_TITLE, title.trim());
+        v.put(COLUMN_CONTENT, content.trim());
+        v.put(COLUMN_IMAGE_URL, imageUrl != null ? imageUrl.trim() : null);
+        v.put(COLUMN_RATING, rating);
+        v.put(COLUMN_UPDATED_AT, now);
+        if (tourId != null) v.put(COLUMN_TOUR_ID, tourId);
+        return getWritableDatabase().update(TABLE_TRAVEL_DIARY, v, COLUMN_ID + " = ?", new String[]{String.valueOf(entryId)}) > 0;
+    }
+
+    public boolean appendTravelDiaryEntry(int entryId, String extraContent) {
+        if (entryId <= 0 || extraContent == null || extraContent.trim().isEmpty()) return false;
+        SQLiteDatabase db = getWritableDatabase();
+        Cursor c = db.rawQuery("SELECT " + COLUMN_CONTENT + " FROM " + TABLE_TRAVEL_DIARY + " WHERE " + COLUMN_ID + " = ?", new String[]{String.valueOf(entryId)});
+        String current = "";
+        if (c.moveToFirst()) current = c.getString(0);
+        c.close();
+        String now = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(new Date());
+        String combined = (current == null ? "" : current.trim()) + "\n\n[" + now + "] " + extraContent.trim();
+        ContentValues v = new ContentValues();
+        v.put(COLUMN_CONTENT, combined);
+        v.put(COLUMN_UPDATED_AT, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
+        return db.update(TABLE_TRAVEL_DIARY, v, COLUMN_ID + " = ?", new String[]{String.valueOf(entryId)}) > 0;
+    }
+
+    public boolean deleteTravelDiaryEntry(int entryId) {
+        if (entryId <= 0) return false;
+        return getWritableDatabase().delete(TABLE_TRAVEL_DIARY, COLUMN_ID + " = ?", new String[]{String.valueOf(entryId)}) > 0;
     }
 
     public List<com.example.vntravelapp.models.NotificationItem> getNotifications() {
@@ -1290,10 +1799,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public void cancelTrip(String title, String date, String reason) {
         SQLiteDatabase db = this.getWritableDatabase();
+        String userEmail = null;
+        Cursor cursor = db.rawQuery(
+                "SELECT " + COLUMN_USER_EMAIL + " FROM " + TABLE_ORDERS + " WHERE " + COLUMN_TITLE + " = ? AND " + COLUMN_DATE + " = ? LIMIT 1",
+                new String[]{title, date}
+        );
+        if (cursor.moveToFirst()) {
+            userEmail = cursor.getString(0);
+        }
+        cursor.close();
+
         ContentValues v = new ContentValues();
         v.put(COLUMN_TITLE, title);
         v.put(COLUMN_DATE_RANGE, date);
         v.put(COLUMN_REASON, reason);
+        v.put(COLUMN_USER_EMAIL, userEmail);
         v.put(COLUMN_CREATED_AT, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date()));
         db.insert(TABLE_CANCELLED_TRIPS, null, v);
 
@@ -1311,7 +1831,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public List<TripItem> getUpcomingTripsByUser(String email) {
         List<TripItem> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-        String currentDate = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
 
         Cursor c = db.rawQuery(
                 "SELECT o.title, o.date, t.location, t.price, t.image_url " +
@@ -1350,13 +1869,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         if (c.moveToFirst()) {
             do {
                 list.add(new TripItem(
-                        c.getString(0), // title
-                        c.getString(2) != null ? c.getString(2) : "Unknown", // location
-                        c.getString(1), // date
-                        "Đã hoàn thành", // status
-                        c.getString(3) != null ? c.getString(3) : "0đ", // price
-                        c.getString(4), // image
-                        "" // reason
+                        c.getString(0),
+                        c.getString(2) != null ? c.getString(2) : "Unknown",
+                        c.getString(1),
+                        "Đã hoàn thành",
+                        c.getString(3) != null ? c.getString(3) : "0đ",
+                        c.getString(4),
+                        ""
                 ));
             } while (c.moveToNext());
         }
@@ -1365,29 +1884,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     public List<TripItem> getCancelledTripsByUser(String email) {
-        return new ArrayList<>();
-    }
-    private List<TripItem> mapCursorToTrips(Cursor cursor) {
         List<TripItem> list = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT c.title, c.date_range, t.location, t.price, t.image_url, c.reason FROM " + TABLE_CANCELLED_TRIPS + " c " +
+                "LEFT JOIN " + TABLE_TOURS + " t ON c.title = t.title " +
+                "WHERE c.user_email = ? ORDER BY c.created_at DESC";
 
-        if (cursor != null && cursor.moveToFirst()) {
+        Cursor c = db.rawQuery(query, new String[]{email});
+        if (c.moveToFirst()) {
             do {
                 list.add(new TripItem(
-                        cursor.getString(0), // title
-                        cursor.getString(2) != null ? cursor.getString(2) : "Unknown",
-                        cursor.getString(1), // date
-                        "UPCOMING",
-                        cursor.getString(3) != null ? cursor.getString(3) : "0đ",
-                        cursor.getString(4), // image
-                        ""
+                        c.getString(0),
+                        c.getString(2) != null ? c.getString(2) : "Unknown",
+                        c.getString(1),
+                        "Đã hủy",
+                        c.getString(3) != null ? c.getString(3) : "0đ",
+                        c.getString(4),
+                        c.getString(5)
                 ));
-            } while (cursor.moveToNext());
-
-            cursor.close();
+            } while (c.moveToNext());
         }
-
+        c.close();
         return list;
     }
+
+    public int getUserIdByEmail(String email) {
+        return getUserIdByEmail(getReadableDatabase(), email);
+    }
+
+    public int getTourIdByTitle(String title) {
+        return getTourIdByTitle(getReadableDatabase(), title);
+    }
+
     public boolean insertSellerTour(String title,
                                     String location,
                                     String duration,
@@ -1419,8 +1947,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         values.put(COLUMN_RATING, 0f);
         values.put(COLUMN_REVIEWS, 0);
         values.put(COLUMN_BOOK_COUNT, 0);
-        values.put(COLUMN_LATITUDE, 0);
-        values.put(COLUMN_LONGITUDE, 0);
         values.put(COLUMN_START_DATE, startDate);
         values.put(COLUMN_END_DATE, endDate);
         values.put(COLUMN_SELLER_EMAIL, sellerEmail);
@@ -1429,57 +1955,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         long result = db.insert(TABLE_TOURS, null, values);
         return result != -1;
     }
-    public List<Tour> getToursBySeller(String sellerEmail) {
-        List<Tour> list = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
 
-        Cursor c = db.query(
-                TABLE_TOURS,
-                null,
-                COLUMN_SELLER_EMAIL + " = ?",
-                new String[]{sellerEmail},
-                null,
-                null,
-                COLUMN_ID + " DESC"
-        );
-
-        if (c.moveToFirst()) {
-            do {
-                String imageUrl = c.getString(c.getColumnIndexOrThrow(COLUMN_IMAGE_URL));
-                String rawImageUrls = null;
-                int imageUrlsIndex = c.getColumnIndex(COLUMN_IMAGE_URLS);
-                if (imageUrlsIndex >= 0) rawImageUrls = c.getString(imageUrlsIndex);
-
-                Tour tour = new Tour(
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_TITLE)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_LOCATION)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_DURATION)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_PRICE)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_DESCRIPTION)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_ITINERARY)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_INCLUDED)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_EXCLUDED)),
-                        c.getInt(c.getColumnIndexOrThrow(COLUMN_IMAGE_RES)),
-                        imageUrl,
-                        parseImageUrls(rawImageUrls, imageUrl),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_VIDEO_URL)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_BADGE)),
-                        c.getFloat(c.getColumnIndexOrThrow(COLUMN_RATING)),
-                        c.getInt(c.getColumnIndexOrThrow(COLUMN_REVIEWS)),
-                        c.getInt(c.getColumnIndexOrThrow(COLUMN_BOOK_COUNT)),
-                        c.getDouble(c.getColumnIndexOrThrow(COLUMN_LATITUDE)),
-                        c.getDouble(c.getColumnIndexOrThrow(COLUMN_LONGITUDE)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_START_DATE)),
-                        c.getString(c.getColumnIndexOrThrow(COLUMN_END_DATE))
-                );
-                tour.setId(c.getInt(c.getColumnIndexOrThrow(COLUMN_ID)));
-                list.add(tour);
-            } while (c.moveToNext());
-        }
-
-        c.close();
-        return list;
-    }
     public boolean updateSellerTour(int tourId,
                                     String title,
                                     String location,
@@ -1517,6 +1993,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return result > 0;
     }
+
     public boolean deleteSellerTour(int tourId) {
         SQLiteDatabase db = this.getWritableDatabase();
         int result = db.delete(TABLE_TOURS, COLUMN_ID + " = ?", new String[]{
@@ -1524,6 +2001,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         });
         return result > 0;
     }
+
     public Cursor getAllOrdersForSeller() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery(
@@ -1532,12 +2010,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 null
         );
     }
+
     public boolean cancelOrder(int orderId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(COLUMN_ORDER_STATUS, "CANCELLED");        int result = db.update("orders", values, "id = ?", new String[]{String.valueOf(orderId)});
+        values.put(COLUMN_ORDER_STATUS, "CANCELLED");
+        int result = db.update("orders", values, "id = ?", new String[]{String.valueOf(orderId)});
         return result > 0;
     }
+
     public Cursor getSellerTourStats() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery(
@@ -1548,6 +2029,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 null
         );
     }
+
     public boolean confirmOrder(int orderId) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();

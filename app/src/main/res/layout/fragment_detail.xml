@@ -401,6 +401,52 @@
                         </RelativeLayout>
 
                         <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:background="#F6F8FF"
+                            android:padding="12dp"
+                            android:layout_marginBottom="12dp">
+
+                            <RatingBar
+                                android:id="@+id/rbCommentRating"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:numStars="5"
+                                android:stepSize="0.5" />
+
+                            <EditText
+                                android:id="@+id/etCommentContent"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:background="@android:drawable/edit_text"
+                                android:minLines="3"
+                                android:hint="Chia sẻ trải nghiệm của bạn..."
+                                android:textSize="13sp" />
+
+                            <Button
+                                android:id="@+id/btnSubmitComment"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="10dp"
+                                android:text="Gửi đánh giá"
+                                android:textAllCaps="false"
+                                android:backgroundTint="#1148B8"
+                                android:textColor="#FFFFFF" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvReviewEmpty"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Chưa có đánh giá nào. Hãy là người đầu tiên chia sẻ!"
+                            android:textColor="#7A8FAF"
+                            android:textSize="13sp"
+                            android:visibility="gone"
+                            android:layout_marginBottom="8dp" />
+
+                        <LinearLayout
                             android:id="@+id/llReviews"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

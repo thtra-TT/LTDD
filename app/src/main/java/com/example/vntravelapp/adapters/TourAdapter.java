@@ -157,8 +157,9 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
             }
         }
 
-        boolean hasVideo = tour.getVideoUrl() != null && !tour.getVideoUrl().trim().isEmpty();
-        boolean canPreviewVideo = hasVideo && isDirectVideoUrl(tour.getVideoUrl()) && isActive;
+        String primaryVideoUrl = getPrimaryVideoUrl(tour.getVideoUrl());
+        boolean hasVideo = primaryVideoUrl != null && !primaryVideoUrl.trim().isEmpty();
+        boolean canPreviewVideo = hasVideo && isDirectVideoUrl(primaryVideoUrl) && isActive;
 
         String primaryImageUrl = tour.getPrimaryImageUrl();
 
@@ -176,7 +177,7 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
             holder.ivPlayIcon.setVisibility(View.VISIBLE);
             videoHandler.postDelayed(() -> {
                 if (holder.getAdapterPosition() == position) {
-                    holder.vvTourPreview.setVideoURI(Uri.parse(tour.getVideoUrl()));
+                    holder.vvTourPreview.setVideoURI(Uri.parse(primaryVideoUrl));
                     holder.vvTourPreview.setOnPreparedListener(mp -> {
                         mp.setLooping(true);
                         mp.setVolume(0, 0);
@@ -246,6 +247,17 @@ public class TourAdapter extends RecyclerView.Adapter<TourAdapter.TourViewHolder
         try { path = Uri.parse(trimmed).getPath(); } catch (Exception ignored) {}
         String target = path != null ? path.toLowerCase() : lower;
         return target.endsWith(".mp4") || target.endsWith(".m3u8") || target.endsWith(".webm") || target.endsWith(".3gp");
+    }
+
+    private static String getPrimaryVideoUrl(String raw) {
+        if (raw == null) return null;
+        String[] parts = raw.split("\\|");
+        for (String part : parts) {
+            if (part == null) continue;
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) return trimmed;
+        }
+        return null;
     }
 
     @Override

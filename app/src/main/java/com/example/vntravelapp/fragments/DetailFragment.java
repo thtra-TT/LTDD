@@ -14,8 +14,10 @@ import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,6 +32,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.bumptech.glide.Glide;
 import com.example.vntravelapp.R;
 import com.example.vntravelapp.database.DatabaseHelper;
+import com.example.vntravelapp.models.CommentItem;
 import com.example.vntravelapp.models.Hotel;
 import com.example.vntravelapp.models.Tour;
 import com.google.android.material.tabs.TabLayout;
@@ -37,6 +40,7 @@ import com.google.android.material.tabs.TabLayoutMediator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class DetailFragment extends Fragment {
 
@@ -50,6 +54,7 @@ public class DetailFragment extends Fragment {
     private String itinerary, included, excluded;
     private String startDate, endDate;
     private ArrayList<String> imageUrls = new ArrayList<>();
+    private int tourId = -1;
 
     private static final String[][] REVIEW_POOL = {
             {"Nguyễn Minh Tuấn", "5", "Tour rất tuyệt! Hướng dẫn viên nhiệt tình, lịch trình hợp lý. Sẽ quay lại lần sau."},
@@ -134,6 +139,18 @@ public class DetailFragment extends Fragment {
         return lower.contains("youtube.com") || lower.contains("youtu.be");
     }
 
+    private static List<String> parseVideoUrls(String raw) {
+        List<String> list = new ArrayList<>();
+        if (raw == null) return list;
+        String[] parts = raw.split("\\|");
+        for (String part : parts) {
+            if (part == null) continue;
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) list.add(trimmed);
+        }
+        return list;
+    }
+
     private static String buildYouTubeEmbedUrl(String url) {
         String videoId = null;
         if (url.contains("youtu.be/")) {
@@ -202,6 +219,7 @@ public class DetailFragment extends Fragment {
             reviews = hotel.getReviewCount();
             startDate = null;
             endDate = null;
+            tourId = -1;
             return;
         }
 
@@ -223,6 +241,7 @@ public class DetailFragment extends Fragment {
         reviews = tour.getReviewCount();
         startDate = tour.getStartDate();
         endDate = tour.getEndDate();
+        tourId = tour.getId();
     }
 
     @Nullable
@@ -245,6 +264,11 @@ public class DetailFragment extends Fragment {
         TextView tvReadMore = view.findViewById(R.id.tvReadMore);
         TextView tvTimeRange = view.findViewById(R.id.tvTourTimeRange);
         Button btnBook = view.findViewById(R.id.btnBook);
+
+        RatingBar rbCommentRating = view.findViewById(R.id.rbCommentRating);
+        EditText etCommentContent = view.findViewById(R.id.etCommentContent);
+        Button btnSubmitComment = view.findViewById(R.id.btnSubmitComment);
+        TextView tvReviewEmpty = view.findViewById(R.id.tvReviewEmpty);
 
         LinearLayout llItinerary = view.findViewById(R.id.tvItinerary);
         LinearLayout llIncluded = view.findViewById(R.id.tvIncluded);
@@ -305,30 +329,40 @@ public class DetailFragment extends Fragment {
         renderTimeline(llItinerary, itinerary);
         renderChecklist(llIncluded, included, 0xFF2E7D32, "✓");
         renderChecklist(llExcluded, excluded, 0xFFC62828, "✗");
-        renderReviews(llReviews, rating);
 
-        btnBook.setOnClickListener(v -> {
-            if (!active) {
-                Toast.makeText(getContext(), "Tour này hiện không khả dụng", Toast.LENGTH_SHORT).show();
+        DatabaseHelper db = new DatabaseHelper(requireContext());
+        if (tourId <= 0 && title != null) {
+            tourId = db.getTourIdByTitle(title);
+        }
+        renderComments(db, llReviews, tvReviewEmpty, tvScore, tvRating, tvReviews);
+
+        btnSubmitComment.setOnClickListener(v -> {
+            if (tourId <= 0) {
+                Toast.makeText(getContext(), "Không thể gửi đánh giá cho tour này", Toast.LENGTH_SHORT).show();
                 return;
             }
-
+            String content = etCommentContent.getText().toString().trim();
+            if (content.isEmpty()) {
+                Toast.makeText(getContext(), "Vui lòng nhập nội dung đánh giá", Toast.LENGTH_SHORT).show();
+                return;
+            }
             SharedPreferences pref = requireActivity().getSharedPreferences("UserPrefs", getContext().MODE_PRIVATE);
-            String role = pref.getString("saved_role", "BUYER");
-
-            if ("SELLER".equals(role)) {
-                Toast.makeText(getContext(), "Tài khoản người bán không được đặt tour", Toast.LENGTH_SHORT).show();
+            String email = pref.getString("saved_email", "");
+            int userId = db.getUserIdByEmail(email);
+            if (userId <= 0) {
+                Toast.makeText(getContext(), "Vui lòng đăng nhập để đánh giá", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            BookingFragment bookingFragment = BookingFragment.newInstance(
-                    title, price, location, imageUrl, imageRes, startDate, endDate
-            );
-            requireActivity().getSupportFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.fragment_container, bookingFragment)
-                    .addToBackStack(null)
-                    .commit();
+            float stars = rbCommentRating.getRating();
+            boolean ok = db.addComment(userId, tourId, stars, content);
+            if (!ok) {
+                Toast.makeText(getContext(), "Không thể gửi đánh giá", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            etCommentContent.setText("");
+            rbCommentRating.setRating(5f);
+            renderComments(db, llReviews, tvReviewEmpty, tvScore, tvRating, tvReviews);
+            Toast.makeText(getContext(), "Đã gửi đánh giá", Toast.LENGTH_SHORT).show();
         });
 
         return view;
@@ -411,6 +445,123 @@ public class DetailFragment extends Fragment {
             row.addView(tvComment);
 
             if (i < count - 1) {
+                View divider = new View(requireContext());
+                divider.setBackgroundColor(0xFFEEF2FA);
+                LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, dp
+                );
+                divParams.setMargins(0, 14 * dp, 0, 0);
+                divider.setLayoutParams(divParams);
+                row.addView(divider);
+            }
+            container.addView(row);
+        }
+    }
+
+    private void renderComments(DatabaseHelper db, LinearLayout container, TextView tvEmpty,
+                                TextView tvScore, TextView tvRating, TextView tvReviews) {
+        container.removeAllViews();
+        List<CommentItem> comments = tourId > 0 ? db.getCommentsForTour(tourId) : new ArrayList<>();
+        if (tvEmpty != null) {
+            tvEmpty.setVisibility(comments.isEmpty() ? View.VISIBLE : View.GONE);
+        }
+        float avg = 0f;
+        for (CommentItem item : comments) {
+            avg += item.getRating();
+        }
+        if (!comments.isEmpty()) {
+            avg = avg / comments.size();
+        }
+        if (tvScore != null) tvScore.setText(String.format(Locale.getDefault(), "%.1f ⭐", avg));
+        if (tvRating != null) tvRating.setText("⭐ " + String.format(Locale.getDefault(), "%.1f", avg));
+        if (tvReviews != null) tvReviews.setText(" (" + comments.size() + ")");
+
+        int dp = (int) TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, 1, requireContext().getResources().getDisplayMetrics()
+        );
+
+        for (int i = 0; i < comments.size(); i++) {
+            CommentItem comment = comments.get(i);
+            String reviewer = comment.getUserName();
+            int stars = Math.round(comment.getRating());
+
+            LinearLayout row = new LinearLayout(requireContext());
+            row.setOrientation(LinearLayout.VERTICAL);
+            row.setBackgroundColor(i % 2 == 0 ? 0xFFF8FAFF : 0xFFFFFFFF);
+            row.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+            row.setPadding(0, 14 * dp, 0, 14 * dp);
+
+            LinearLayout header = new LinearLayout(requireContext());
+            header.setOrientation(LinearLayout.HORIZONTAL);
+            header.setGravity(Gravity.CENTER_VERTICAL);
+            header.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            ));
+
+            TextView avatar = new TextView(requireContext());
+            String initials = reviewer != null && !reviewer.isEmpty() ? reviewer.substring(0, 1) : "?";
+            avatar.setText(initials);
+            avatar.setTextSize(14);
+            avatar.setTypeface(null, Typeface.BOLD);
+            avatar.setTextColor(0xFFFFFFFF);
+            avatar.setGravity(Gravity.CENTER);
+            avatar.setBackground(makeCircle(avatarColor(i)));
+            LinearLayout.LayoutParams avatarParams = new LinearLayout.LayoutParams(36 * dp, 36 * dp);
+            avatarParams.setMargins(0, 0, 12 * dp, 0);
+            avatar.setLayoutParams(avatarParams);
+
+            LinearLayout nameCol = new LinearLayout(requireContext());
+            nameCol.setOrientation(LinearLayout.VERTICAL);
+            nameCol.setLayoutParams(new LinearLayout.LayoutParams(
+                    0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f
+            ));
+
+            TextView tvName = new TextView(requireContext());
+            tvName.setText(reviewer);
+            tvName.setTextSize(13);
+            tvName.setTypeface(null, Typeface.BOLD);
+            tvName.setTextColor(0xFF1A2A4A);
+
+            TextView tvStars = new TextView(requireContext());
+            tvStars.setText(buildStars(stars));
+            tvStars.setTextSize(12);
+
+            nameCol.addView(tvName);
+            nameCol.addView(tvStars);
+            header.addView(avatar);
+            header.addView(nameCol);
+            row.addView(header);
+
+            TextView tvComment = new TextView(requireContext());
+            tvComment.setText(comment.getContent());
+            tvComment.setTextSize(13);
+            tvComment.setTextColor(0xFF4A5568);
+            tvComment.setLineSpacing(0, 1.55f);
+            LinearLayout.LayoutParams cmtParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            cmtParams.setMargins(48 * dp, 6 * dp, 0, 0);
+            tvComment.setLayoutParams(cmtParams);
+            row.addView(tvComment);
+
+            TextView tvDate = new TextView(requireContext());
+            tvDate.setText(comment.getCreatedAt());
+            tvDate.setTextSize(11);
+            tvDate.setTextColor(0xFF9AAAC8);
+            LinearLayout.LayoutParams dateParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            dateParams.setMargins(48 * dp, 6 * dp, 0, 0);
+            tvDate.setLayoutParams(dateParams);
+            row.addView(tvDate);
+
+            if (i < comments.size() - 1) {
                 View divider = new View(requireContext());
                 divider.setBackgroundColor(0xFFEEF2FA);
                 LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
@@ -581,12 +732,11 @@ public class DetailFragment extends Fragment {
     private List<MediaItem> buildMediaItems() {
         List<MediaItem> items = new ArrayList<>();
 
-        if (videoUrl != null && !videoUrl.trim().isEmpty()) {
-            String trimmed = videoUrl.trim();
-            if (isDirectVideoUrl(trimmed)) {
-                items.add(MediaItem.video(trimmed));
-            } else if (isYouTubeUrl(trimmed)) {
-                items.add(MediaItem.youtube(trimmed));
+        for (String url : parseVideoUrls(videoUrl)) {
+            if (isDirectVideoUrl(url)) {
+                items.add(MediaItem.video(url));
+            } else if (isYouTubeUrl(url)) {
+                items.add(MediaItem.youtube(url));
             }
         }
 

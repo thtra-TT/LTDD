@@ -22,11 +22,21 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
         void onOpen(JournalEntry item);
     }
 
+    public interface JournalLongClickListener {
+        void onLongPress(JournalEntry item);
+    }
+
     private final List<JournalEntry> items = new ArrayList<>();
     private final JournalActionListener listener;
+    private final JournalLongClickListener longClickListener;
 
     public JournalAdapter(JournalActionListener listener) {
+        this(listener, null);
+    }
+
+    public JournalAdapter(JournalActionListener listener, JournalLongClickListener longClickListener) {
         this.listener = listener;
+        this.longClickListener = longClickListener;
     }
 
     @NonNull
@@ -45,6 +55,13 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
         holder.tvDate.setText(item.getCreatedAt());
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onOpen(item);
+        });
+        holder.itemView.setOnLongClickListener(v -> {
+            if (longClickListener != null) {
+                longClickListener.onLongPress(item);
+                return true;
+            }
+            return false;
         });
 
         Glide.with(holder.itemView.getContext())
@@ -82,4 +99,3 @@ public class JournalAdapter extends RecyclerView.Adapter<JournalAdapter.JournalV
         }
     }
 }
-

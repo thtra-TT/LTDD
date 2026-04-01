@@ -20,11 +20,21 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
         void onOpen(ReviewEntry item);
     }
 
+    public interface ReviewLongClickListener {
+        void onLongPress(ReviewEntry item);
+    }
+
     private final List<ReviewEntry> items = new ArrayList<>();
     private final ReviewActionListener listener;
+    private final ReviewLongClickListener longClickListener;
 
     public ReviewsAdapter(ReviewActionListener listener) {
+        this(listener, null);
+    }
+
+    public ReviewsAdapter(ReviewActionListener listener, ReviewLongClickListener longClickListener) {
         this.listener = listener;
+        this.longClickListener = longClickListener;
     }
 
     @NonNull
@@ -44,6 +54,13 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
         holder.tvDate.setText(item.getCreatedAt());
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) listener.onOpen(item);
+        });
+        holder.itemView.setOnLongClickListener(v -> {
+            if (longClickListener != null) {
+                longClickListener.onLongPress(item);
+                return true;
+            }
+            return false;
         });
     }
 
@@ -75,4 +92,3 @@ public class ReviewsAdapter extends RecyclerView.Adapter<ReviewsAdapter.ReviewVi
         }
     }
 }
-
